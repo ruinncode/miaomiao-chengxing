@@ -1,13 +1,20 @@
 // ============================================================
 //  喵喵成行 — easy-to-edit settings
 // ============================================================
+
+// ✏️  The two cats' names — change them here and they update everywhere
+//     (name tags above the cats, lobby, level clear, scoreboard, winner screen…)
+window.NAMES = {
+  p1: 'jsq',   // black cat (room creator / host, local: WASD)
+  p2: 'yyf',   // white cat (the one who joins, local: arrow keys)
+};
+
 window.GAME_CONFIG = {
-  // Names shown in the game
-  player1Name: '黑猫 Ashley',      // black cat (room creator / host)
-  player2Name: '白猫 宝贝',     // white cat (the one who joins)
+  names: window.NAMES,
 
   // ✏️  Personal message on the ending screen — edit me!
-  endingTitle: '你们一起回家啦 ❤',
+  //     {p1} / {p2} are replaced with the names above.
+  endingTitle: '{p1} 和 {p2} 一起回家啦 ❤',
   endingTitleEn: 'You two made it home together ❤',
   endingMessage: '不管隔着多远，有你在，每一关都变简单了。我们一直一起走下去吧 🐾',
 

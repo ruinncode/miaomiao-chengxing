@@ -7,8 +7,16 @@
   const { VsMatch, VS_GAMES } = window.Versus;
   const LEVELS = window.LEVELS;
   const W = 960, H = 544, FONT = 'Zpix, "Press Start 2P", monospace';
-  const NAMES = [CFG.player1Name, CFG.player2Name];
-  const SHORT = ['黑猫', '白猫'];
+  const NAMES = [String(CFG.names.p1), String(CFG.names.p2)];
+  const SHORT = NAMES;
+  const fmt = (t) => String(t || '').replace(/\{p1\}/g, NAMES[0]).replace(/\{p2\}/g, NAMES[1]);
+  const esc = (t) => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const BOTH = `${NAMES[0]} 和 ${NAMES[1]}`;
+  // fill the names into the static menu text
+  function fillNames() {
+    document.querySelectorAll('.n-p1').forEach(e => e.textContent = NAMES[0]);
+    document.querySelectorAll('.n-p2').forEach(e => e.textContent = NAMES[1]);
+  }
   const $ = (id) => document.getElementById(id);
   const qs = new URLSearchParams(location.search);
 
@@ -146,21 +154,21 @@
             this.code = info;
             $('lobby-code').textContent = info;
             $('lobby-link').value = location.origin + location.pathname + '?room=' + info;
-            $('lobby-status').innerHTML = '<span class="dots">等待TA加入</span>';
+            $('lobby-status').innerHTML = `<span class="dots">等待 ${esc(NAMES[1])} 加入</span>`;
           } else if (kind === 'signal-trouble') $('lobby-status').textContent = '服务器连接不稳定，正在重试…';
           else if (kind === 'error') $('lobby-status').textContent = '出错了：' + info + '（可以返回再试一次）';
         },
         onConnected: () => {
           Sfx.join(); this.paused = false;
           if (this.session.mode === 'pick') { show('screen-mode'); this.modeScreen(); }
-          else banner('TA回来啦！继续玩 ♥', 2500);
+          else banner(`${NAMES[1]} 回来啦！继续玩 ♥`, 2500);
           $('btn-menu').classList.remove('hidden');
           this.sendState(true);
         },
         onDisconnected: () => {
           Sfx.leave();
-          if (this.session && this.session.mode !== 'pick') { this.paused = true; banner('TA掉线了… 等待重新连接（房间码 ' + this.code + '）', 0); }
-          else { show('screen-lobby'); $('lobby-status').innerHTML = '<span class="dots">TA掉线了，等待重新加入</span>'; }
+          if (this.session && this.session.mode !== 'pick') { this.paused = true; banner(`${NAMES[1]} 掉线了… 等待重新连接（房间码 ` + this.code + '）', 0); }
+          else { show('screen-lobby'); $('lobby-status').innerHTML = `<span class="dots">${esc(NAMES[1])} 掉线了，等待重新加入</span>`; }
         },
         onMessage: (m) => this.hostMsg(m),
       });
@@ -173,11 +181,11 @@
       this.role = 'guest'; this.me = 1; this.buf = []; this.guestPkt = null;
       history.replaceState(null, '', location.pathname + '?room=' + code);
       show('screen-joining'); $('joining-code').textContent = code;
-      $('joining-status').innerHTML = '<span class="dots">正在寻找TA</span>';
+      $('joining-status').innerHTML = `<span class="dots">正在寻找 ${esc(NAMES[0])} 的房间</span>`;
       this.net = new Net({
         onStatus: (kind, info) => {
           if (kind === 'no-room') {
-            $('joining-status').textContent = '找不到房间 ' + info + '，请检查房间码，或让TA先创建房间。正在重试…';
+            $('joining-status').textContent = '找不到房间 ' + info + `，请检查房间码，或让 ${NAMES[0]} 先创建房间。正在重试…`;
             setTimeout(() => { if (this.role === 'guest' && this.net && !this.net.connected) this.net.connectToHost(); }, 3000);
           } else if (kind === 'error') $('joining-status').textContent = '出错了：' + info;
           else if (kind === 'signal-trouble') $('joining-status').textContent = '服务器连接不稳定，正在重试…';
@@ -192,7 +200,7 @@
       const host = this.role !== 'guest';
       $('btn-mode-coop').disabled = !host; $('btn-mode-vs').disabled = !host;
       $('mode-wait').classList.toggle('hidden', host);
-      $('mode-sub').textContent = this.role === 'local' ? '同一台设备：黑猫用 WASD，白猫用方向键' : (host ? '两只猫都到齐啦！你来选：' : '两只猫都到齐啦！');
+      $('mode-sub').textContent = this.role === 'local' ? `同一台设备：${NAMES[0]}（黑猫）用 WASD，${NAMES[1]}（白猫）用方向键` : (host ? `${BOTH} 都到齐啦！你来选：` : `${BOTH} 都到齐啦！`);
       document.querySelectorAll('.host-only').forEach(b => b.classList.toggle('hidden', !host));
     },
     pickMode(m) {
@@ -327,8 +335,8 @@
         star: this.add.image(0, 0, 'star').setScale(2).setDepth(7).setVisible(false),
         yarn: this.add.image(0, 0, 'yarn').setScale(2).setDepth(7).setVisible(false),
         ring: this.add.image(0, 0, 'ring').setScale(2).setDepth(7).setVisible(false),
-        tag: this.add.text(0, 0, '', this.ts(12, '#ffffff')).setOrigin(0.5, 1).setDepth(9),
       }));
+      this.catFx.forEach((fx, i) => { fx.tag = this.makeNameTag(i); });
       this.fx = this.add.layer().setDepth(8);
       // HUD
       const hud = this.hud = {};
@@ -353,6 +361,21 @@
       this.showAttract();
       App.toMenu();
       if (qs.get('room')) { $('join-code').value = qs.get('room').toUpperCase(); App.joinRoom(qs.get('room')); }
+    }
+    // small pixel "pill" name tag above a cat (black cat: light text on dark; white cat: dark text on light)
+    makeNameTag(i) {
+      const dark = i === 0;
+      const fill = dark ? 0x2b2340 : 0xfff6fa, edge = dark ? 0xfff6fa : 0x3a2e4f;
+      const txt = this.add.text(0, 0, NAMES[i], { fontFamily: FONT, fontSize: '12px', color: dark ? '#fff6fa' : '#3a2e4f', resolution: 1 });
+      const tw = Math.ceil(txt.width), th = Math.ceil(txt.height);
+      const w = Math.max(20, tw + 10 + ((tw + 10) % 2)), h = 16, x0 = -w / 2, y0 = -h;
+      const g = this.add.graphics();
+      g.fillStyle(0x3a2e4f, 0.35).fillRect(x0 + 2, y0 + 2, w - 2, h - 1);          // soft drop shadow
+      g.fillStyle(edge, 1).fillRect(x0 + 1, y0, w - 2, h).fillRect(x0, y0 + 1, w, h - 2); // outline (pixel-rounded)
+      g.fillStyle(fill, 1).fillRect(x0 + 2, y0 + 1, w - 4, h - 2).fillRect(x0 + 1, y0 + 2, w - 2, h - 4);
+      g.fillStyle(edge, 1).fillRect(-2, 0, 4, 1).fillRect(-1, 1, 2, 1);           // little pointer
+      txt.setPosition(Math.round(-tw / 2), y0 + Math.floor((h - th) / 2));
+      const c = this.add.container(0, 0, [g, txt]).setDepth(9).setVisible(false); c.tagW = w; return c;
     }
     ts(size, color = '#ffffff', bg) {
       const o = { fontFamily: FONT, fontSize: size + 'px', color, resolution: 1 };
@@ -452,8 +475,8 @@
       if (m === 'coop' && v.s.ph === 'end') {
         if (curScreen !== 'screen-end') {
           show('screen-end'); App.modeScreen();
-          $('end-title').textContent = CFG.endingTitle; $('end-msg').textContent = CFG.endingMessage;
-          $('end-fish').textContent = `一共收集了 ${v.s.ft} 条小鱼 · 谢谢你一直陪着我`;
+          $('end-title').textContent = fmt(CFG.endingTitle); $('end-msg').textContent = fmt(CFG.endingMessage);
+          $('end-fish').textContent = `${BOTH} 一共收集了 ${v.s.ft} 条小鱼 · 谢谢你一直陪着我`;
         }
         return;
       }
@@ -461,9 +484,9 @@
         if (curScreen !== 'screen-vsend') {
           show('screen-vsend'); App.modeScreen();
           const w = v.s.mw;
-          $('vs-title').textContent = w < 0 ? '平局！两只都是最棒的猫' : `${NAMES[w]} 赢啦！`;
+          $('vs-title').textContent = w < 0 ? `平局！${BOTH} 都是最棒的猫` : `${NAMES[w]} 赢啦！`;
           $('vs-winner-img').src = this.textures.get(w === 1 ? 'cat1_happy' : 'cat0_happy').getSourceImage().toDataURL();
-          $('vs-score').innerHTML = `<span class="p0">${v.s.w[0]}</span> : <span class="p1">${v.s.w[1]}</span>`;
+          $('vs-score').innerHTML = `<span class="nm">${esc(NAMES[0])}</span> <span class="p0">${v.s.w[0]}</span> : <span class="p1">${v.s.w[1]}</span> <span class="nm">${esc(NAMES[1])}</span>`;
           $('vs-history').textContent = v.s.h.map((x, i) => `第${i + 1}局 ${x < 0 ? '平' : SHORT[x]}`).join(' · ');
         }
         return;
@@ -504,9 +527,16 @@
         fx.yarn.setVisible(!!(flags & 8) && !(flags & 1)).setPosition(cx + Math.cos(t * 4) * 18, st[1] - 4 + Math.sin(t * 4) * 4);
         fx.ring.setVisible(false);
         // name tags: who is who
-        let tag = '';
-        if (v.m !== 'attract' && App.role !== 'menu') tag = App.role === 'local' ? (i ? '2P' : '1P') : (i === App.me ? '你' : 'TA');
-        fx.tag.setText(tag).setPosition(Math.round(cx), Math.round(top - 2)).setVisible(!!tag && !(flags & 1));
+        fx.tag.setPosition(Math.round(cx), Math.round(top - 4)).setVisible(!(flags & 1));
+      }
+      // keep the two name tags readable when the cats overlap (stacking, cuddling)
+      const [A, B] = this.catFx.map(f => f.tag);
+      if (A.visible && B.visible) {
+        const need = (A.tagW + B.tagW) / 2 + 2, dx = B.x - A.x;
+        if (Math.abs(B.y - A.y) < 18 && Math.abs(dx) < need) {
+          const push = Math.ceil((need - Math.abs(dx)) / 2), dir = dx > 0 || (dx === 0) ? 1 : -1;
+          A.x -= push * dir; B.x += push * dir;
+        }
       }
     }
     drawCoop(s) {
@@ -541,7 +571,7 @@
       [h.center, h.timer].forEach(o => o.setVisible(vs));
       h.side.forEach(sd => { sd.name.setVisible(vs); sd.pips.forEach(p => p.setVisible(vs)); sd.icons.forEach(p => p.setVisible(false)); sd.val.setVisible(false); sd.ficon.setVisible(false); });
       h.net.setVisible(App.role !== 'menu' && v.m !== 'attract');
-      if (App.role === 'local') h.net.setText('本地双人 · 黑猫 WASD+F  白猫 方向键+回车');
+      if (App.role === 'local') h.net.setText(`本地双人 · ${NAMES[0]} WASD+F  ${NAMES[1]} 方向键+回车`);
       else if (App.net) h.net.setText(App.net.connected ? `在线 · 房间 ${App.net.code} · 延迟 ${Math.round(App.net.rtt)}ms` : '连接中…');
       let big = '', sub = '', sub2 = '';
       if (coop) {
@@ -549,8 +579,8 @@
         h.title.setText(`第${s.lv + 1}/${LEVELS.length}关 · ${L.name}`);
         h.hint.setText(L.hint);
         h.fish.setText(`${s.f.filter(Boolean).length}/${s.f.length}`);
-        if (s.ph === 'clear') { big = s.lv + 1 >= LEVELS.length ? '到家啦！' : '过关啦！'; sub = '两只猫都到啦 ♥'; }
-        if (App.paused) sub2 = '暂停中：等待TA重新连接';
+        if (s.ph === 'clear') { big = s.lv + 1 >= LEVELS.length ? '到家啦！' : '过关啦！'; sub = `${BOTH} 都到啦 ♥`; }
+        if (App.paused) sub2 = `暂停中：等待 ${NAMES[1 - App.me]} 重新连接`;
       }
       if (vs) {
         const d = VS_GAMES[s.gt];
@@ -568,9 +598,9 @@
           big = d.name; sub = n > 0 ? String(n) : '开始！'; sub2 = d.hint;
           if (n !== this.lastCount) { this.lastCount = n; if (n > 0 && n <= 3) Sfx.tick(); }
         } else this.lastCount = -1;
-        if (s.ph === 'roundEnd') { big = s.rw < 0 ? '平局！' : `${SHORT[s.rw]}赢了这一局！`; sub = `${s.w[0]} : ${s.w[1]}`; }
+        if (s.ph === 'roundEnd') { big = s.rw < 0 ? '平局！' : `${SHORT[s.rw]} 赢了这一局！`; sub = `${NAMES[0]} ${s.w[0]} : ${s.w[1]} ${NAMES[1]}`; }
         if (s.ph === 'play' && s.tl <= 5 && s.tl > 0) sub = String(s.tl);
-        if (App.paused) sub2 = '暂停中：等待TA重新连接';
+        if (App.paused) sub2 = `暂停中：等待 ${NAMES[1 - App.me]} 重新连接`;
       }
       if (App.role === 'guest' && App.net && !App.net.connected && App.guestPkt) sub2 = '连接断开了，正在重新连接…';
       h.big.setText(big); h.sub.setText(sub); h.sub2.setText(sub2).setVisible(!!sub2);
@@ -697,6 +727,7 @@
 
   // ---------------------------------------------------------- boot (wait for the pixel font)
   function boot() {
+    fillNames();
     wire();
     new Phaser.Game({
       type: Phaser.AUTO, parent: 'game', width: W, height: H, backgroundColor: '#2d2650',
