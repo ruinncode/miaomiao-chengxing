@@ -82,6 +82,7 @@ input:focus { background: #fffbe0; }
 @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
 .vs-score { font-size: 48px; margin: 6px 0; text-shadow: 4px 4px 0 var(--lav); }
 .vs-score .p0 { color: #2f2a45; } .vs-score .p1 { color: var(--pink-d); }
+.vs-score .nm { font-size: 20px; color: #2f2a45; text-shadow: 2px 2px 0 var(--lav); vertical-align: middle; }
 
 .banner {
   position: absolute; left: 50%; top: 56px; transform: translateX(-50%); background: #fffbe0; padding: 8px 16px;

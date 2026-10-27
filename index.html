@@ -18,7 +18,7 @@
     <div class="card" id="screen-title">
       <div class="logo"><img class="sprite" data-tex="cat0_idle0" alt=""><img class="sprite heart" data-tex="heart" alt=""><img class="sprite flip" data-tex="cat1_idle0" alt=""></div>
       <h1 class="title">喵喵成行</h1>
-      <p class="sub">两只小猫，一起回家 · 隔着屏幕也能一起玩</p>
+      <p class="sub"><b class="n-p1">jsq</b> 和 <b class="n-p2">yyf</b>，两只小猫一起回家 · 隔着屏幕也能一起玩</p>
       <button class="btn pink" id="btn-create">创建房间</button>
       <div class="join-row">
         <input id="join-code" maxlength="4" placeholder="房间码" autocomplete="off" autocapitalize="characters" spellcheck="false">
@@ -33,17 +33,17 @@
     <div class="card hidden" id="screen-lobby">
       <h2>你的房间</h2>
       <div class="code" id="lobby-code">····</div>
-      <p class="sub">把这个链接发给TA：</p>
+      <p class="sub">把这个链接发给 <b class="n-p2">yyf</b>：</p>
       <div class="link-row"><input id="lobby-link" readonly><button class="btn small" id="btn-copy">复制</button></div>
       <p class="waiting" id="lobby-status"><span class="dots">正在连接服务器</span></p>
-      <p class="tiny">你是<b>黑猫</b>（房主），TA是<b>白猫</b>。</p>
+      <p class="tiny">你是 <b class="n-p1">jsq</b>（黑猫 · 房主），<b class="n-p2">yyf</b> 是白猫。</p>
       <button class="btn ghost" id="btn-lobby-back">返回</button>
     </div>
 
     <div class="card hidden" id="screen-joining">
       <h2>加入房间 <span id="joining-code"></span></h2>
-      <p class="waiting" id="joining-status"><span class="dots">正在寻找TA</span></p>
-      <p class="tiny">你是<b>白猫</b>。</p>
+      <p class="waiting" id="joining-status"><span class="dots">正在寻找房间</span></p>
+      <p class="tiny">你是 <b class="n-p2">yyf</b>（白猫）。</p>
       <button class="btn ghost" id="btn-join-back">返回</button>
     </div>
 
@@ -53,7 +53,7 @@
       <p class="sub" id="mode-sub">两只猫都到齐啦！</p>
       <button class="btn pink big" id="btn-mode-coop">合作闯关<small>5个关卡 · 一起回家</small></button>
       <button class="btn blue big" id="btn-mode-vs">对战小游戏<small>抢小鱼 · 猫拳擂台 · 躲避扫地机 · 五局三胜</small></button>
-      <p class="waiting hidden" id="mode-wait"><span class="dots">等待房主选择玩法</span></p>
+      <p class="waiting hidden" id="mode-wait"><span class="dots">等待 <b class="n-p1">jsq</b> 选择玩法</span></p>
       <button class="btn ghost" id="btn-mode-back">离开</button>
     </div>
 
