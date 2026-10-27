@@ -47,7 +47,7 @@ Cities.quick({
     ['时代广场 → 中央车站', '7 号线往东两站，去看中央车站的星空穹顶。', [['n7', 'Times Sq–42 St', 'Grand Central–42 St']]],
   ],
   acts: [
-    { id: 'cart', name: '街角小推车', area: 'midtown', x: 700, icon: 'cup', kind: 'order', tod: 'day', intro: '中城街角的小推车！照着清单点：热狗、椒盐卷饼、热咖啡……', real: '纽约街头餐车和热狗推车是很多人的午餐。',
+    { id: 'cart', name: '街角小推车', area: 'midtown', x: 700, icon: 'cup', kind: 'order', tod: 'day', intro: '中城街角的小推车！照着清单点：热狗、椒盐卷饼、热咖啡……', real: '纽约街头餐车和热狗推车是很多猫的午餐。',
       cfg: { listTitle: '午餐清单', n: 5, pool: [['热狗', 'star'], ['椒盐卷饼', 'coin'], ['热咖啡', 'cup'], ['贝果', 'coin'], ['披萨片', 'pie'], ['柠檬水', 'cup']] } },
     { id: 'empire', name: '帝国大厦合影', area: 'union', x: 700, icon: 'star', kind: 'photo', tod: 'night', intro: '从百老汇往北看，让帝国大厦进框，两只猫靠在一起按 ↑。', real: '帝国大厦 1931 年落成，塔顶的灯会按节日换颜色。', cfg: { target: .78, lmName: '帝国大厦', n: 4 } },
     { id: 'market', name: '农夫市集', area: 'union', x: 1300, icon: 'apple', kind: 'collect', tod: 'day', intro: '联合广场的绿色市集开张了！一起接住掉下来的苹果和花。', real: '联合广场绿色市集（Union Square Greenmarket）一周开四天。', cfg: { fall: true, items: ['apple', 'apple', 'flower'], max: 6 } },

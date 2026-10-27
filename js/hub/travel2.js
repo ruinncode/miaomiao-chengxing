@@ -56,6 +56,8 @@
       const nb = 108 - ox, end = ln.stations[s.stn.dir > 0 ? ln.stations.length - 1 : 0].n; R.rect(nb, 132, 120, 20, '#111'); R.text((cfg.signs.towards || 'To') + ' ' + end, nb + 4, 134, { c: '#ffb84a', sh: false }); const wait = tt < 3 ? Math.ceil(3 - tt) : tt < 11 ? 0 : Math.ceil(CYCLE + 3 - tt);
       R.text(wait ? Math.ceil(wait / 10) * 1 + ' min' : (cfg.signs.boarding || 'Boarding'), nb + 4, 143, { c: '#ffb84a', sh: false });
       const ex = 30 - ox; R.rect(ex - 14, 150, 28, 10, '#1a6a3a'); R.text(cfg.signs.exit || 'Exit', ex, 151, { al: 'c', c: '#fff', sh: false });
+      // waiting passenger cats (they board when the doors open)
+      if (!(tt > 4 && tt < 11)) for (let i = 0; i < 5; i++) { const px = 90 + i * 150 + ((s.stn.i * 37 + i * 53) % 40) - ox; if (px > -20 && px < 500) NPC.draw(R, px, 241 + (i % 2) * 6, { look: s.stn.i * 7 + i * 13 + 3, dir: i % 2 ? -1 : 1, sit: i === 3, role: i === 4 && s.stn.i % 3 === 0 ? 'student' : 'walk', t: R.t, wea: 'clear' }); }
       if (!K.cuddleDraw(R, s, ox)) K.drawCatsWalk(R, s, ox);
       K.bubbles(R, s, SCN.station.spots(s, cfg), ox, 166);
       K.header(R, s, cfg, ln.name + ' · ' + stn.n); K.toast(R, s); K.fade(R, s);
@@ -110,9 +112,12 @@
     },
     draw(R, s, cfg, dt) {
       const C = R.C, r = s.ride, ln = line(cfg, r.line), a = ln.stations[r.i], b = ln.stations[clamp(r.i + r.dir, 0, ln.stations.length - 1)], under = r.dwell > 0 ? a.under : (r.p < .5 ? a.under && b.under || a.under : b.under), tod = K.tod(s), night = tod === 'night', k = ln.car || 'subway';
-      const speed = r.dwell > 0 ? 0 : Math.sin(Math.min(1, r.p) * Math.PI); K.L.rx = (K.L.rx || 0) + speed * dt * 260;
+      const speed = r.dwell > 0 ? 0 : Math.sin(Math.min(1, r.p) * Math.PI), sway0 = Math.round(speed * Math.sin(R.t * 7) * 0.8); K.L.rx = (K.L.rx || 0) + speed * dt * 260;
       // window band
-      if (under) { R.rect(0, 40, 480, 110, '#0c0d14'); for (let i = 0; i < 6; i++) { const x = ((i * 97 - K.L.rx) % 520 + 520) % 520 - 20; R.rect(x, 70, speed > .2 ? 30 * speed + 2 : 2, 2, '#ffe9a8'); } for (let i = 0; i < 12; i++) { const x = ((i * 43 - K.L.rx * 1.3) % 500 + 500) % 500 - 10; R.rect(x, 50, 1, 90, '#1a1c26'); } if (r.dwell > 0) { R.rect(0, 40, 480, 110, ln.wall || '#c8c0a8'); R.rect(0, 100, 480, 5, ln.color); R.text(a.n, 240, 70, { al: 'c', size: 24, c: '#14161e', sh: false }); } }
+      const arv = cfg.areas.find(x => x.id === (r.p < .5 ? a.area || b.area : b.area || a.area)), vid = ln.view || (arv && arv.view) || 'downtown';
+      if (window.TrainView) { TrainView.draw(R, 0, 40, 480, 110, { under, tod, wea: s.wea, t: R.t, rx: K.L.rx, speed, city: cfg.id, lake: !under && (vid === 'lake' || vid === 'island'), street: !under && (k === 'streetcar' || k === 'lrt'), wall: ln.wall, near: r.dwell > 0 ? 0 : Math.max(0, (r.p - .82) / .18) * ((b.under ? 1 : 0)) });
+        if (under) { if (r.dwell > 0) { R.rect(0, 40, 480, 110, ln.wall || '#c8c0a8'); R.rect(0, 100, 480, 5, ln.color); R.text(a.n, 240, 70, { al: 'c', size: 24, c: '#14161e', sh: false }); } } else { if (r.dwell > 0) { R.rect(0, 120, 480, 30, '#9a9aa4'); R.rect(0, 120, 480, 3, '#f3c55e'); const w = R.tw(a.n) + 10; R.rect(240 - w / 2, 98, w, 12, '#14161e'); R.text(a.n, 240, 100, { al: 'c', c: '#fff', sh: false }); } } }
+      else if (under) { R.rect(0, 40, 480, 110, '#0c0d14'); if (r.dwell > 0) { R.rect(0, 40, 480, 110, ln.wall || '#c8c0a8'); R.rect(0, 100, 480, 5, ln.color); R.text(a.n, 240, 70, { al: 'c', size: 24, c: '#14161e', sh: false }); } }
       else { const ar = cfg.areas.find(x => x.id === (r.p < .5 ? a.area : b.area)) || cfg.areas.find(x => x.id === a.area) || K.area(s, cfg); SC.drawView(R, 0, 40, 480, 110, K.view(cfg, ln.view || ar.view), { tod, weather: s.wea, t: R.t, pan: ((K.L.rx / 1500) % 1 + 1) % 1, off: { trains: 1 } }); for (let i = 0; i < 5; i++) { const x = ((i * 120 - K.L.rx * 2) % 600 + 600) % 600 - 60; R.rect(x, 40, 3, 110, '#3a3a44'); } if (r.dwell > 0) { R.rect(0, 120, 480, 30, '#9a9aa4'); R.rect(0, 120, 480, 3, '#f3c55e'); const w = R.tw(a.n) + 10; R.rect(240 - w / 2, 98, w, 12, '#14161e'); R.text(a.n, 240, 100, { al: 'c', c: '#fff', sh: false }); } }
       // interior per kind
       const pal = { subway: ['#d8d8dc', '#b8bcc4', '#5a6a8a'], streetcar: ['#e8e4dc', '#c8c4bc', '#c8343a'], lrt: ['#e8e8ec', '#c8ccd4', '#2a6ab8'], bilevel: ['#d8dcd4', '#b8bcb4', '#2e7a4a'], metro: ['#e0e0e4', '#c0c4cc', '#4a6a9a'], shinkansen: ['#ecece8', '#d0d0cc', '#3a5a9a'], heritage: ['#c8a878', '#8a6a4a', '#7a2a24'] }[k] || ['#d8d8dc', '#b8bcc4', '#5a6a8a'];
@@ -120,12 +125,15 @@
       for (let x = 0; x < 480; x += 160) { R.rect(x + 10, 40, 140, 3, pal[1]); R.rect(x + 10, 147, 140, 3, pal[1]); }
       for (const sx of [70, 330]) { for (let i = 0; i < 4; i++) { R.rect(sx + i * 26, 206, 24, 16, pal[2]); R.rect(sx + i * 26, 188, 24, 20, mix(pal[2], '#000', .15)); } }
       for (const px of [40, 200, 300, 460]) R.rect(px, 0, 2, 200, k === 'subway' ? '#e8c84a' : '#c8c8d0');
+      // passenger cats on the seats (seats next to the doors stay free for jsq & yyf)
+      for (const [j, px] of [[0, 82], [1, 108], [2, 342], [3, 420]]) if ((r.i * 3 + j) % 4 !== 0) NPC.draw(R, px - sway0, 208, { look: r.i * 5 + j * 11 + (k.length), dir: px < 240 ? 1 : -1, sit: 1, t: R.t, role: (r.i + j) % 7 === 2 ? 'student' : 'walk' });
+      if (r.i % 2) NPC.draw(R, 300, 241, { look: r.i * 9 + 4, dir: -1, t: R.t, role: 'walk' });
       // doors
       const open = r.dwell > 0 ? Math.min(1, (5 - r.dwell) * 3, r.dwell * 3) : 0; R.rect(226, 40, 48, 160, '#9aa0aa'); const g = Math.round(open * 20); R.rect(228, 44, 22 - g, 152, '#c8ccd4'); R.rect(250 + g, 44, 22 - g, 152, '#c8ccd4'); if (g) R.rect(250 - g, 44, g * 2, 152, under ? (ln.wall || '#c8c0a8') : '#9ab8d8');
       // route strip (stations + current position)
       const n = ln.stations.length, step = Math.min(22, 440 / Math.max(1, n - 1)), x0 = 240 - step * (n - 1) / 2;
       R.rect(0, 15, 480, 24, '#14161e'); R.rect(x0, 26, step * (n - 1), 2, ln.color);
-      ln.stations.forEach((st0, j) => { const x = x0 + j * step; R.rect(x - 1, 25, 3, 4, j === r.i ? C.pink : '#e8e4f0'); if (j === r.i || j === r.i + r.dir || n < 12 || j === 0 || j === n - 1) R.text(st0.n.length > 8 && n > 10 ? st0.n.slice(0, 7) + '…' : st0.n, x, j % 2 ? 31 : 17, { al: 'c', c: j === r.i ? C.pink : '#9aa3bd', sh: false }); });
+      ln.stations.forEach((st0, j) => { const x = x0 + j * step; R.rect(x - 1, 25, 3, 4, j === r.i ? C.warm : '#e8e4f0'); if (j === r.i || j === r.i + r.dir || n < 12 || j === 0 || j === n - 1) R.text(st0.n.length > 8 && n > 10 ? st0.n.slice(0, 7) + '…' : st0.n, x, j % 2 ? 31 : 17, { al: 'c', c: j === r.i ? C.warm : '#9aa3bd', sh: false }); });
       const px = x0 + (r.i + (r.dwell > 0 ? 0 : r.p * r.dir)) * step; R.rect(px - 2, 24, 5, 6, C.gold);
       // announcement ticker
       let an = K.L.ann; if (an && an[3] && s.ride && an[3] !== s.ride.line) an = K.L.ann = null; if (an) { an[2] -= dt; if (an[2] <= 0) K.L.ann = null; R.rect(120, 154, 240, 22, '#111'); R.text(an[0], 240, 156, { al: 'c', c: '#ffb84a', sh: false }); R.text(an[1], 240, 166, { al: 'c', c: '#ffb84a', sh: false }); }
@@ -155,6 +163,7 @@
     coin: ['.yyy.', 'yyoyy', 'yyoyy', '.yyy.'], ticket: ['ooooo', 'o.o.o', 'ooooo'], raccoon: ['k...k', 'kwwwk', 'wkwkw', 'kwwwk', '.kkk.', 'k.k.k'], syrup: ['.w.', 'ooo', 'ooo', 'ooo'], pie: ['.ooo.', 'oyyyo', 'ooooo'], goose: ['..kk.', '..kwk', '..k..', 'bbbb.', '.bbbb', '.y.y.'], cone: ['..o..', '.owo.', '.ooo.', 'ooooo'],
   };
   const PAL = { r: '#d8343a', b: '#6a4a30', y: '#f3c55e', g: '#5aa86a', p: '#c86a9a', w: '#f4f0e8', o: '#e8873a', k: '#1a1a22' };
+  K.icon = (...a) => icon(...a);
   function icon(R, k, x, y, s = 1) { const m = ICON[k] || ICON.star; m.forEach((row, j) => [...row].forEach((ch, i) => { if (ch !== '.') R.rect(x - row.length * s / 2 + i * s, y - m.length * s / 2 + j * s, s, s, PAL[ch] || '#fff'); })); }
   K.icon = icon;
   const KINDS = {};
@@ -195,9 +204,9 @@
       q[1].forEach((o, j) => { const y = 92 + j * 22, rev = A.rev > 0, ok = j === q[2]; R.btn(42, y, 396, 19, '', { k: 'actx', a: { k: 'ans', v: j } }, { c: rev ? (ok ? '#2e6a4a' : '#3a2a3a') : '#2e3a52' }); R.text('ABCD'[j] + '. ' + o, 48, y + 6, { c: C.paper });
         for (let i = 0; i < 2; i++) if (A.pick[i] === j) { R.rect(i ? 424 : 408, y + 4, 10, 10, A.lock[i] ? (i ? C.paper : '#2b2340') : C.dim); R.text(i ? '棕' : '黑', i ? 429 : 413, y + 5, { al: 'c', c: i ? '#3a2e4f' : C.paper, sh: false }); } });
       if (A.rev > 0 && q[3]) R.wrap('💡 ' + q[3], 42, 196, 396, { c: C.gold, lh: 8 });
-      R.rect(30, 34, 420 * Math.max(0, A.qt) / (c.qtime || 20), 3, C.pink);
+      R.rect(30, 34, 420 * Math.max(0, A.qt) / (c.qtime || 20), 3, C.warm);
       R.cat(0, A.lock[0] ? 'sit' : 'idle0', 60, 262); R.cat(1, A.lock[1] ? 'sit' : 'idle1', 420, 262, { flip: true });
-      R.text('←/→ 选 · F/Enter 确认（两人都要答）', 240, 252, { al: 'c', c: C.dim });
+      R.text('←/→ 选 · F/Enter 确认（两只猫都要答）', 240, 252, { al: 'c', c: C.dim });
     },
   };
   KINDS.order = { // shopping / ordering list: find the right items together before time runs out
@@ -278,7 +287,7 @@
       R.topBar(c.name); R.text('⏱ ' + Math.max(0, Math.ceil(A.left)) + '  ★ ' + A.score, 470, 18, { al: 'r', c: C.gold });
       if (A.ph === 'intro') { R.rect(0, 0, 480, 272, '#000', .45); R.panel(100, 40, 280, 180, { title: '怎么玩 · ' + c.name }); R.wrap(c.intro || '', 114, 60, 252, { c: C.cream, lh: 10 }); if (c.real) R.wrap('📍 ' + c.real, 114, 160, 252, { c: C.dim, lh: 8 }); R.btn(190, 196, 100, 18, '开始！(↑)', { k: 'actStart' }, { c: '#3a6a5a' }); }
       if (A.ph === 'count') { const n = Math.ceil(A.cd); R.text(n > 0 ? String(n) : 'GO!', 240, 110, { al: 'c', size: 48, c: C.cream }); }
-      if (A.ph === 'end') { R.rect(0, 0, 480, 272, '#000', .4); R.panel(140, 60, 200, 130, { title: '完成！' }); R.text('★ ' + A.score, 240, 86, { al: 'c', size: 24, c: C.gold }); R.text('🪙 +' + A.coins + ' 旅行硬币', 240, 116, { al: 'c', c: C.cream }); R.text(A.score >= (c.good || 8) ? (c.win || '太棒了！两只猫配合满分 ♥') : (c.ok || '不错哦，再来一次？'), 240, 132, { al: 'c', c: C.pink }); R.btn(156, 160, 80, 18, '再来 (↑)', { k: 'actAgain' }); R.btn(244, 160, 80, 18, '离开 (↓)', { k: 'actLeave' }, { c: '#6a3a4a' }); if (Math.random() < .1) R.spark(160 + Math.random() * 160, 70, 'heart'); }
+      if (A.ph === 'end') { R.rect(0, 0, 480, 272, '#000', .4); R.panel(140, 60, 200, 130, { title: '完成！' }); R.text('★ ' + A.score, 240, 86, { al: 'c', size: 24, c: C.gold }); R.text('🪙 +' + A.coins + ' 旅行硬币', 240, 116, { al: 'c', c: C.cream }); R.text(A.score >= (c.good || 8) ? (c.win || '太棒了！两只猫配合满分 ♥') : (c.ok || '不错哦，再来一次？'), 240, 132, { al: 'c', c: C.warm }); R.btn(156, 160, 80, 18, '再来 (↑)', { k: 'actAgain' }); R.btn(244, 160, 80, 18, '离开 (↓)', { k: 'actLeave' }, { c: '#6a3a4a' }); if (Math.random() < .1) R.spark(160 + Math.random() * 160, 70, 'heart'); }
       K.toast(R, s); K.fade(R, s);
     },
   };

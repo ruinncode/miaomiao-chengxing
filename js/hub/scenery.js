@@ -86,7 +86,7 @@ window.Scenery = (function () {
     wheel(p, x, base, s, tn, t = 0, rad = 28) { // ferris / observation wheel (animated when t given)
       const c = mix(tn.near, '#e8ecf4', tn.p ? .25 : .7); const cy = base - rad - 4;
       p.line(x, cy, x - 10, base, c); p.line(x, cy, x + 10, base, c); p.ring(x, cy, rad, c); p.ring(x, cy, rad - 3, c);
-      for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283 + t * 0.15; p.line(x, cy, x + Math.cos(a) * rad, cy + Math.sin(a) * rad, mix(c, tn.near, .4)); p.r(x + Math.cos(a) * rad - 1, cy + Math.sin(a) * rad, 3, 3, tn.p ? (i % 3 ? '#ff8fb8' : '#8fd0f6') : '#f2efe8'); }
+      for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283 + t * 0.15; p.line(x, cy, x + Math.cos(a) * rad, cy + Math.sin(a) * rad, mix(c, tn.near, .4)); p.r(x + Math.cos(a) * rad - 1, cy + Math.sin(a) * rad, 3, 3, tn.p ? (i % 3 ? '#f3a85e' : '#8fd0f6') : '#f2efe8'); }
     },
     namsan(p, x, base, s, tn) { p.tri(x - 50, base - 26, 100, 26, mix(tn.far, '#2a4a3a', .4)); const c = mix(tn.mid, '#e8ecf4', tn.p ? .3 : .7); p.r(x - 2, base - 66, 4, 40, c); p.r(x - 6, base - 70, 12, 6, c); p.r(x - .5, base - 90, 1, 20, c); if (tn.p) p.r(x - 5, base - 68, 10, 1, '#8fd0f6'); },
     peak(p, x, base, s, tn) { // hong kong: mountain ridge + tall tower w/ crown
@@ -138,36 +138,42 @@ window.Scenery = (function () {
 
   // Draw the full window view into the hub canvas at (X,Y,W,H) art px.
   // pan: 0..1 horizontal parallax (mouse/cat position), t: seconds
-  // ---- Real-photo mode (opt-in, local to this device). Open-license Wikimedia Commons photos only, see CREDITS.md.
-  // Photos are lazy-loaded the first time a matching view is drawn; until then the pixel view is shown.
+  // ---- Real-pixel mode (default on Toronto; 「像素」 switches back to the drawn views, saved in localStorage.mm_real).
+  // Open-licence Wikimedia Commons photos, pixelated offline by tools/pixelate_photos.py into 320x180 PNG-8
+  // (28 colours, Bayer dither, edge darkening) with day / dusk / night grades and two parallax layers
+  // (sky, city). Lazy-loaded the first time a view needs them; the drawn view shows until they arrive. See CREDITS.md.
   const REAL = {
-    on: (() => { try { return localStorage.getItem('mm_real') === '1'; } catch (e) { return false; } })(),
-    base: 'assets/photos/toronto/', img: {},
+    on: (() => { try { return localStorage.getItem('mm_real') !== '0'; } catch (e) { return true; } })(),
+    base: 'assets/photos/toronto/px/', img: {},
     credit: { 'to-lake': 'Maksim Sokolov · CC BY-SA 4.0', 'to-island': 'Jchmrt · CC BY-SA 4.0', 'to-dt': 'Alessio Bragadini · CC BY-SA 2.0', 'to-dist': 'Mark · CC BY 2.0', 'to-mid': 'Maksim Sokolov · CC BY-SA 4.0' },
     has(id) { return !!this.credit[id]; },
-    get(id) {
+    tod(t) { return t === 'night' ? 'night' : t === 'day' ? 'day' : 'dusk'; },
+    get(id, tod, layer) {
       if (!this.has(id) || typeof Image === 'undefined') return null;
-      let im = this.img[id]; if (!im) { im = this.img[id] = new Image(); im.decoding = 'async'; im.src = this.base + id + '.webp'; }
+      const k = `${id}-${this.tod(tod)}-${layer}`; let im = this.img[k];
+      if (!im) { im = this.img[k] = new Image(); im.decoding = 'async'; im.src = this.base + k + '.png'; }
       return im.complete && im.naturalWidth ? im : null;
     },
     toggle() { this.on = !this.on; try { localStorage.setItem('mm_real', this.on ? '1' : '0'); } catch (e) {} return this.on; },
   };
-  const PHOTO_TINT = { dawn: ['#ff9a8a', .16], day: null, golden: ['#ff9a3a', .2], night: ['#0a1030', .5] };
-  function drawPhoto(R, X, Y, W, H, view, im, o) {
-    const ctx = R.ctx, S = R.S, pan = o.pan ?? .5, tod = o.tod || 'day', wea = o.weather || 'clear';
-    const k = Math.max(W * S / im.naturalWidth, H * S / im.naturalHeight) * 1.08, dw = im.naturalWidth * k, dh = im.naturalHeight * k;
-    const dx = X * S - (dw - W * S) * Math.max(0, Math.min(1, pan)), dy = Y * S - (dh - H * S) * .5;
+  function drawPhoto(R, X, Y, W, H, view, ims, o) {
+    const ctx = R.ctx, S = R.S, pan = Math.max(0, Math.min(1, o.pan ?? .5)), tod = o.tod || 'day', wea = o.weather || 'clear';
+    const iw = ims[0].naturalWidth, ih = ims[0].naturalHeight;
+    const k = Math.max(1, Math.ceil(Math.max(W / iw, H / ih) * 2 - .01) / 2), dw = iw * k, dh = ih * k; // whole/half steps keep the pixels even
+    const dy = Math.round(Y - (dh - H) * .5);
     ctx.save(); ctx.beginPath(); ctx.rect(X * S, Y * S, W * S, H * S); ctx.clip();
-    const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = true; ctx.drawImage(im, dx, dy, dw, dh); ctx.imageSmoothingEnabled = sm;
-    const tn = view.id === 'to-island' && tod !== 'night' ? null : PHOTO_TINT[tod]; // the island photo is already a dusk shot
-    if (tn) R.rect(X, Y, W, H, tn[0], tn[1]);
+    const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
+    ims.forEach((im, i) => { const dx = Math.round(X - (dw - W) * (.5 + (pan - .5) * (i ? 1 : .35))); ctx.drawImage(im, dx * S, dy * S, dw * S, dh * S); }); // sky drifts less than the city
+    ctx.imageSmoothingEnabled = sm;
+    if (tod === 'dawn') R.rect(X, Y, W, H, '#ff9a8a', .1);
+    if (o.street) R.rect(X, Y, W, H, (SKY[tod] || SKY.day)[0], tod === 'night' ? .2 : .28); // street backdrops sit behind the buildings: a little haze for depth
     if (wea === 'rain' || wea === 'fog' || wea === 'snow') R.rect(X, Y, W, H, wea === 'snow' ? '#e8eef4' : '#8a94a8', wea === 'fog' ? .45 : .25);
-    if (wea === 'snow' || wea === 'rain') for (let i = 0; i < W * H / 300; i++) { const t = o.t || 0, xx = X + (hash(i, 7) * W + (wea === 'rain' ? t * 30 : Math.sin(t + i) * 6)) % W, yy = Y + (hash(i, 8) * H + t * (wea === 'rain' ? 140 : 18)) % H; R.rect(xx, yy, 1, wea === 'rain' ? 4 : 1, wea === 'rain' ? '#c8d4e8' : '#ffffff', .8); }
-    if (W >= 160 && H >= 60 && o.credit !== false) R.text('照片 ' + REAL.credit[view.id], X + W - 3, Y + H - 10, { al: 'r', size: 10, c: '#ffffff', shc: '#000000' });
+    if (wea === 'snow' || wea === 'rain') for (let i = 0; i < W * H / 300; i++) { const t = o.t || 0, xx = X + (hash(i, 7) * W + (wea === 'rain' ? t * 30 : Math.sin(t + i) * 6)) % W, yy = Y + (hash(i, 8) * H + t * (wea === 'rain' ? 140 : 18)) % H; R.rect(xx, yy, 1, wea === 'rain' ? 3 : 1, '#ffffff', .7); }
+    if (W >= 160 && H >= 60 && o.credit !== false) R.text('照片 ' + REAL.credit[view.id], X + W - 3, o.street ? Y + 30 : Y + H - 10, { al: 'r', size: 10, c: '#ffffff', shc: '#000000' });
     ctx.restore();
   }
   function drawView(R, X, Y, W, H, view, o = {}) {
-    if (REAL.on && REAL.has(view.id)) { const im = REAL.get(view.id); if (im) return drawPhoto(R, X, Y, W, H, view, im, o); }
+    if (REAL.on && REAL.has(view.id) && !(o.street && (view.id === 'to-dist' || view.id === 'to-dt'))) { const sk = REAL.get(view.id, o.tod, 'sky'), ci = REAL.get(view.id, o.tod, 'city'); if (sk && ci) return drawPhoto(R, X, Y, W, H, view, [sk, ci], o); }
     const tod = o.tod || 'night', wea = o.weather || 'clear', t = o.t || 0, pan = o.pan ?? .5, ctx = R.ctx, S = R.S;
     const tn = TONE[tod], night = tod === 'night', VW = W + 80, OFF = o.off || {}; // views are wider for parallax
     const horizon = Math.round(H * (view.horizon || .68));
@@ -304,7 +310,7 @@ window.Scenery = (function () {
     R.rect(X - 4, Y + H + 4, W + 8, 1, fd); R.rect(X - 6, Y + H + 2, W + 12, 4, mix(fr, '#fff', .15)); R.rect(X - 6, Y + H + 6, W + 12, 1, fd);
     // curtains
     if (o.curtains) {
-      const cc = o.curtainC || '#c86a7a', cd = mix(cc, '#000', .25), open = o.open ?? 1, sway = Math.sin(t * .8) * 1.5;
+      const cc = o.curtainC || '#b8865a', cd = mix(cc, '#000', .25), open = o.open ?? 1, sway = Math.sin(t * .8) * 1.5;
       const cw = Math.round(14 + (1 - open) * (W / 2 - 14));
       R.rect(X - 10, Y - 10, W + 20, 4, '#5a4a3a');
       for (const side of [0, 1]) {
@@ -321,7 +327,7 @@ window.Scenery = (function () {
   const ROOMS = {
     modern: { wall: '#3a3f55', wall2: '#33384c', floor: '#6a5a4a', floor2: '#5f5042', trim: '#e8e0d0', curtain: '#8a96b0', win: { x: 120, y: 34, w: 240, h: 128, style: 'floor' }, bed: 'double' },
     condo: { wall: '#4a4458', wall2: '#423d50', floor: '#8a7058', floor2: '#7c644e', trim: '#e8e0d0', curtain: '#c8a87a', win: { x: 100, y: 30, w: 280, h: 136, style: 'floor' }, bed: 'double' },
-    cozy: { wall: '#5a4a5a', wall2: '#524352', floor: '#7a5a42', floor2: '#6e503a', trim: '#f0e6d6', curtain: '#c86a7a', win: { x: 150, y: 40, w: 180, h: 112, style: 'grid' }, bed: 'double' },
+    cozy: { wall: '#5a4a5a', wall2: '#524352', floor: '#7a5a42', floor2: '#6e503a', trim: '#f0e6d6', curtain: '#b8865a', win: { x: 150, y: 40, w: 180, h: 112, style: 'grid' }, bed: 'double' },
     ryokan: { wall: '#c8b898', wall2: '#bcac8c', floor: '#a8a060', floor2: '#9a9254', trim: '#6a4a2a', curtain: null, win: { x: 130, y: 36, w: 220, h: 120, style: 'shoji' }, bed: 'futon', tatami: true },
     capsule: { wall: '#2a2f3e', wall2: '#252a38', floor: '#3a3f4e', floor2: '#343948', trim: '#d8dce4', curtain: null, win: { x: 170, y: 46, w: 140, h: 86, style: 'grid' }, bed: 'capsule' },
     paris: { wall: '#e8dcc8', wall2: '#dccfb8', floor: '#8a5a3a', floor2: '#7c5032', trim: '#ffffff', curtain: '#5a7a9a', win: { x: 160, y: 26, w: 160, h: 140, style: 'french' }, bed: 'double', mould: true },
@@ -345,25 +351,70 @@ window.Scenery = (function () {
     return rm;
   }
   // furniture helpers drawn on hub canvas directly
+  const QUILT = '#e6dcc4', QUILT2 = '#a8b896';
+  // soft round light: stepped discs, drawn additively so it brightens whatever is under it
+  function glow(R, x, y, r, c = '#ffd88a', a = .5, k = 9) {
+    const g = R.ctx, S = R.S, op = g.globalCompositeOperation; g.globalCompositeOperation = 'lighter'; g.fillStyle = c;
+    for (let i = 0; i < k; i++) { const rr = Math.round(r * (1 - i / k)); g.globalAlpha = a / k * (.6 + .4 * i / k); g.beginPath(); g.arc(Math.round(x) * S, Math.round(y) * S, rr * S, 0, Math.PI * 2); g.fill(); }
+    g.globalAlpha = 1; g.globalCompositeOperation = op;
+  }
   const F = {
+    glow,
+    nightstand(R, x, y, on, t) { // y = floor; bedside lamp on top
+      R.rect(x, y - 20, 22, 20, '#6a4a34'); R.rect(x, y - 20, 22, 2, '#7e5a40'); R.rect(x + 2, y - 15, 18, 1, '#4a3424'); R.rect(x + 9, y - 11, 4, 1, '#c8a050'); R.rect(x + 2, y - 7, 18, 1, '#4a3424');
+      R.rect(x + 10, y - 26, 2, 6, '#c8a050'); R.rect(x + 7, y - 21, 8, 1, '#c8a050');
+      R.rect(x + 5, y - 33, 12, 7, on ? '#ffe6b0' : '#e8d8b8'); R.rect(x + 6, y - 34, 10, 1, on ? '#fff2d0' : '#f0e4c8'); R.rect(x + 4, y - 27, 14, 1, mix('#e8d8b8', '#000', .2));
+      R.rect(x + 16, y - 22, 4, 2, '#3a3a4a'); // phone
+    },
+    console(R, x, y, w = 92) { // low media console
+      R.rect(x, y - 16, w, 13, '#6a4a34'); R.rect(x, y - 16, w, 2, '#86624a'); R.rect(x, y - 3, w, 1, '#3a2a1e');
+      for (let i = 1; i < 3; i++) R.rect(x + w * i / 3, y - 14, 1, 11, '#4a3424');
+      R.rect(x + w / 6 - 3, y - 9, 6, 1, '#c8a050'); R.rect(x + w * 5 / 6 - 3, y - 9, 6, 1, '#c8a050'); R.rect(x + w / 3 + 3, y - 12, w / 3 - 6, 7, '#3a2a1e'); R.rect(x + w / 3 + 5, y - 10, 10, 3, '#1a1f2e'); R.px(x + w / 3 + 7, y - 9, '#8fe0b0');
+      R.rect(x + 3, y - 2, 3, 2, '#3a2a1e'); R.rect(x + w - 6, y - 2, 3, 2, '#3a2a1e');
+    },
+    scratch(R, x, y) { // cat scratching post with a little platform
+      R.rect(x - 10, y - 4, 20, 4, '#b8a888'); R.rect(x - 10, y - 4, 20, 1, '#d0c4a8');
+      R.rect(x - 3, y - 40, 6, 36, '#c8a870'); for (let j = y - 38; j < y - 4; j += 3) R.rect(x - 3, j, 6, 1, '#a88a58');
+      R.rect(x - 9, y - 44, 18, 4, '#b8a888'); R.rect(x - 9, y - 44, 18, 1, '#d0c4a8');
+      R.rect(x + 6, y - 40, 1, 10, '#8a7a6a'); R.rect(x + 4, y - 30, 5, 5, '#e8b64a'); // dangling toy
+    },
+    bowls(R, x, y) { R.rect(x - 2, y - 1, 26, 2, '#9a8a7a'); [['#3f8f95', '#c87a3a'], ['#e8b64a', '#8fd0f6']].forEach(([c, f], i) => { const bx = x + i * 13; R.rect(bx, y - 5, 10, 4, c); R.rect(bx - 1, y - 6, 12, 1, mix(c, '#fff', .25)); R.rect(bx + 1, y - 6, 8, 1, f); }); },
+    catshelf(R, x, y) { R.rect(x, y, 34, 3, '#86624a'); R.rect(x, y + 3, 34, 1, '#4a3424'); R.rect(x + 4, y + 4, 2, 4, '#4a3424'); R.rect(x + 28, y + 4, 2, 4, '#4a3424'); R.rect(x + 6, y - 6, 22, 6, '#d8c8a8'); R.rect(x + 6, y - 6, 22, 1, '#e8dcc0'); },
+    clock(R, x, y, h = 12) { const g = R.ctx, S = R.S; g.fillStyle = '#e8e0d0'; g.beginPath(); g.arc(x * S, y * S, 8 * S, 0, 7); g.fill(); g.fillStyle = '#f8f4ea'; g.beginPath(); g.arc(x * S, y * S, 6.5 * S, 0, 7); g.fill();
+      [0, 3, 6, 9].forEach(k => { const a = k / 12 * Math.PI * 2; R.px(x + Math.round(Math.sin(a) * 5) - .5, y - Math.round(Math.cos(a) * 5) - .5, '#6a5a4a'); });
+      const hand = (a, l, c) => { for (let i = 0; i <= l; i++) R.px(x + Math.sin(a) * i - .5, y - Math.cos(a) * i - .5, c); };
+      hand((h % 12) / 12 * Math.PI * 2, 3, '#2a2a36'); hand((h % 1) * Math.PI * 2, 5, '#2a2a36'); R.px(x - .5, y - .5, '#3f8f95'); },
+    sill(R, x, y, w) { R.rect(x - 8, y, w + 16, 4, '#efe8dc'); R.rect(x - 8, y + 4, w + 16, 1, '#b8b0a4'); // deep sill with little things on it
+      R.rect(x + 8, y - 8, 8, 8, '#b86a4a'); R.rect(x + 7, y - 9, 10, 2, '#c87a5a'); [[-2, -16], [3, -18], [7, -14], [1, -12]].forEach(([dx, dy], i) => R.rect(x + 9 + dx, y + dy, 4, 6, i % 2 ? '#4a8a5a' : '#5aa86a'));
+      R.rect(x + w - 30, y - 6, 16, 6, '#d8c8a8'); R.rect(x + w - 30, y - 7, 16, 1, '#e8dcc0'); R.rect(x + w - 28, y - 10, 5, 3, '#5a8ac8'); R.rect(x + w - 22, y - 9, 4, 2, '#f3c55e'); },
+
     bed(R, kind, x, y, o = {}) { // y = floor line
-      const c = o.c || '#e8e4f0', b = o.blanket || '#c86a7a';
+      const c = o.c || '#eef0f2', b = o.blanket || QUILT;
       if (kind === 'futon') { R.rect(x, y - 8, 120, 8, '#f4f0e6'); R.rect(x + 30, y - 10, 90, 4, b); R.rect(x + 4, y - 12, 22, 5, '#ffffff'); return { x: x + 60, y: y - 8 }; }
       if (kind === 'capsule') { R.rect(x - 10, y - 80, 150, 80, '#d8dce4'); R.rect(x, y - 70, 130, 54, '#1a1f2e'); R.rect(x + 4, y - 30, 122, 10, '#e8e4f0'); R.rect(x + 40, y - 34, 86, 6, b); R.rect(x + 6, y - 66, 30, 3, '#8fd0f6'); R.rect(x - 10, y - 16, 150, 16, '#c3c8d4'); return { x: x + 64, y: y - 28 }; }
       if (kind === 'seat') { for (let i = 0; i < 2; i++) { R.rect(x + i * 46, y - 40, 40, 30, '#3a5a8a'); R.rect(x + i * 46, y - 14, 42, 8, '#30507a'); R.rect(x + i * 46 + 6, y - 40, 28, 6, '#e8e4f0'); } return { x: x + 44, y: y - 12 }; }
       if (kind === 'sofa') { R.rect(x, y - 30, 110, 14, '#8a6a9a'); R.rect(x - 6, y - 26, 10, 22, '#7a5a8a'); R.rect(x + 106, y - 26, 10, 22, '#7a5a8a'); R.rect(x, y - 18, 110, 12, '#9a7aaa'); R.rect(x + 2, y - 6, 4, 6, '#3a2a2a'); R.rect(x + 104, y - 6, 4, 6, '#3a2a2a'); return { x: x + 55, y: y - 18 }; }
-      if (kind === 'windowseat') { R.rect(x, y - 16, 120, 16, '#c8b8a0'); R.rect(x, y - 20, 120, 6, '#e8d8c0'); R.rect(x + 8, y - 26, 18, 8, '#c86a7a'); return { x: x + 60, y: y - 20 }; }
-      // double bed
-      R.rect(x - 4, y - 46, 8, 46, '#5a4030'); R.rect(x - 6, y - 50, 12, 6, '#6a4a38');
-      R.rect(x, y - 22, 140, 16, c); R.rect(x, y - 8, 140, 8, '#5a4030'); R.rect(x + 6, y - 28, 30, 8, '#ffffff'); R.rect(x + 40, y - 26, 100, 20, b); R.rect(x + 40, y - 26, 100, 2, mix(b, '#fff', .25)); R.rect(x + 136, y - 30, 6, 30, '#5a4030');
+      if (kind === 'windowseat') { R.rect(x, y - 16, 120, 16, '#c8b8a0'); R.rect(x, y - 20, 120, 6, '#e8d8c0'); R.rect(x + 8, y - 26, 18, 8, '#3f8f95'); R.rect(x + 94, y - 26, 18, 8, '#e8b64a'); R.rect(x + 9, y - 25, 16, 1, '#5fb0b4'); R.rect(x + 95, y - 25, 16, 1, '#f4d27a'); return { x: x + 60, y: y - 20 }; }
+      // double bed, side view, head at the left: padded headboard, two pillows in the cats' own colours, a cream quilt with sage stitching
+      const hb = o.head || '#46566a', wood = o.wood || '#5a4030';
+      R.rect(x - 10, y - 46, 16, 40, wood); R.rect(x - 9, y - 48, 14, 2, wood); R.rect(x - 8, y - 44, 12, 18, hb); R.rect(x - 8, y - 44, 12, 1, mix(hb, '#fff', .2)); // wood frame, padded panel
+      for (let j = 0; j < 2; j++) R.px(x - 2, y - 40 + j * 8, mix(hb, '#000', .35));
+      R.rect(x - 2, y - 26, 144, 13, c); R.rect(x - 2, y - 26, 144, 1, '#ffffff'); // mattress
+      R.rect(x - 2, y - 13, 144, 7, wood); R.rect(x - 2, y - 13, 144, 1, mix(wood, '#fff', .2)); R.rect(x, y - 6, 4, 6, mix(wood, '#000', .3)); R.rect(x + 134, y - 6, 4, 6, mix(wood, '#000', .3));
+      R.rect(x + 4, y - 33, 28, 9, '#3f8f95'); R.rect(x + 5, y - 33, 26, 1, '#5fb0b4'); R.rect(x + 4, y - 25, 28, 1, mix('#3f8f95', '#000', .3)); // jsq's teal pillow
+      R.rect(x + 12, y - 30, 26, 7, '#e8b64a'); R.rect(x + 13, y - 30, 24, 1, '#f4d27a'); R.rect(x + 12, y - 24, 26, 1, mix('#e8b64a', '#000', .3)); // yyf's yellow pillow
+      R.rect(x + 40, y - 29, 102, 18, b); R.rect(x + 40, y - 29, 102, 3, '#f8f4ea'); R.rect(x + 40, y - 26, 102, 1, mix(b, '#000', .12)); // quilt + folded sheet
+      for (let i = 48; i < 140; i += 12) R.rect(x + i, y - 25, 1, 14, QUILT2); R.rect(x + 40, y - 18, 102, 1, QUILT2);
+      R.rect(x + 138, y - 29, 6, 22, mix(b, '#000', .08)); R.rect(x + 40, y - 11, 104, 1, mix(b, '#000', .25)); // quilt drops over the foot
+      R.rect(x + 64, y - 27, 14, 4, '#d8c8a8'); R.rect(x + 66, y - 28, 10, 1, '#e8dcc0'); // a folded throw
       return { x: x + 76, y: y - 22 };
     },
     lamp(R, x, y, on = true, t = 0) { R.rect(x - 1, y - 40, 2, 34, '#c8a050'); R.rect(x - 6, y - 6, 12, 6, '#8a6a3a'); R.rect(x - 10, y - 50, 20, 10, '#f4d8a0'); if (on) { for (let k = 0; k < 4; k++) { const rr = 14 + k * 10; R.ctx.globalAlpha = .05 + Math.sin(t * 2) * .005; R.rect(x - rr, y - 46 - rr * .3, rr * 2, rr * 1.3 + 4, '#ffd88a'); R.rect(x - rr + 4, y - 46 - rr * .3 - 3, rr * 2 - 8, rr * 1.3 + 10, '#ffd88a'); } R.ctx.globalAlpha = 1; } },
     plant(R, x, y) { R.rect(x - 6, y - 10, 12, 10, '#b86a4a'); R.rect(x - 7, y - 11, 14, 2, '#c87a5a'); [[0, -22], [-6, -18], [6, -17], [-3, -28], [4, -26]].forEach(([dx, dy], i) => R.rect(x + dx - 2, y + dy, 5, 9, i % 2 ? '#4a8a5a' : '#5aa86a')); },
     desk(R, x, y, w = 120) { R.rect(x, y - 30, w, 5, '#8a6040'); R.rect(x, y - 25, w, 1, '#6a4a30'); R.rect(x + 4, y - 25, 4, 25, '#6a4a30'); R.rect(x + w - 8, y - 25, 4, 25, '#6a4a30'); return y - 30; },
-    tv(R, x, y, on, t) { R.rect(x, y - 40, 64, 38, '#14161e'); R.rect(x + 3, y - 37, 58, 32, on ? '#2a3a6a' : '#1a1f2e'); if (on) { for (let i = 0; i < 6; i++) R.rect(x + 6 + i * 9, y - 30 + Math.sin(t * 3 + i) * 3, 6, 6, ['#ff8fb8', '#8fd0f6', '#f3c55e'][i % 3]); } R.rect(x + 28, y - 2, 8, 2, '#14161e'); },
+    tv(R, x, y, on, t) { R.rect(x, y - 40, 64, 38, '#14161e'); R.rect(x + 3, y - 37, 58, 32, on ? '#2a3a6a' : '#1a1f2e'); if (on) { R.rect(x + 3, y - 15, 58, 10, '#3a6a4a'); for (let i = 0; i < 6; i++) R.rect(x + 6 + i * 9, y - 30 + Math.sin(t * 3 + i) * 3, 6, 6, ['#3f8f95', '#8fd0f6', '#f3c55e'][i % 3]); } else { R.rect(x + 6, y - 35, 14, 1, '#2a3148'); R.rect(x + 6, y - 33, 8, 1, '#2a3148'); } R.rect(x + 28, y - 2, 8, 2, '#14161e'); },
     rug(R, x, y, w, c = '#7a5a8a') { R.rect(x, y, w, 14, c); R.rect(x + 3, y + 3, w - 6, 8, mix(c, '#fff', .15)); for (let i = 0; i < w; i += 4) { R.px(x + i, y - 1, c); R.px(x + i, y + 14, c); } },
-    shelf(R, x, y, w = 70) { R.rect(x, y, w, 3, '#6a4a30'); const cols = ['#c86a7a', '#5a8ac8', '#f3c55e', '#8fe0b0', '#9a7aaa', '#e8e4f0']; for (let i = 0; i < w - 4; i += 5) R.rect(x + 2 + i, y - 10 - (hash(i, x) * 4 | 0), 4, 10 + (hash(i, x) * 4 | 0), cols[(i * 3 + x) % cols.length]); },
+    shelf(R, x, y, w = 70) { R.rect(x, y, w, 3, '#6a4a30'); const cols = ['#b8704a', '#5a8ac8', '#f3c55e', '#8fe0b0', '#9a7aaa', '#e8e4f0']; for (let i = 0; i < w - 4; i += 5) R.rect(x + 2 + i, y - 10 - (hash(i, x) * 4 | 0), 4, 10 + (hash(i, x) * 4 | 0), cols[(i * 3 + x) % cols.length]); },
     frame(R, x, y, w, h, kind = 0) { R.rect(x, y, w, h, '#c8a050'); R.rect(x + 2, y + 2, w - 4, h - 4, ['#8fd0f6', '#ffc8a8', '#b6efc8'][kind % 3]); R.rect(x + 4, y + h - 8, w - 8, 4, '#5a8a6a'); },
   };
 
@@ -423,5 +474,129 @@ window.Scenery = (function () {
     while (x < 240) { const r = hash(i * 17 + j, cfg.seed || 1), w = 40 + ((r * 4) | 0) * 10; const kinds = cfg.shops || ['cafe', 'books', 'grocery', 'bakery', 'flowers', 'conv']; out.push({ x: i * 240 + x + w - 14, w: 9, kind: kinds[(r * 53 | 0) % kinds.length], sx: i * 240 + x + 4, sw: w - 8 }); x += w + 1; j++; }
     return out;
   }
-  return { REAL, TODS, WEATHERS, TOD_NAME, WEA_NAME, TONE, SKY, LM, ROOMS, F, SHOPKINDS, hash, mix, drawView, windowFrame, roomBack, streetChunk, shopsIn, layer, P, GAP };
+
+  // ---------- real streets (data from js/cities/<city>-streets.js, generated from OpenStreetMap) ----------
+  // A 240×272 chunk drawn at screen y=0: ground line 232, storefront band 196–232, sidewalk 232–244, road 246–272.
+  // Building heights follow the real storey counts (ground floor 36px, then 12px/storey, towers compressed above 8).
+  const OSMCOL = { red: '#9a4a3a', brown: '#7a5a44', black: '#2e323a', white: '#e4e2dc', grey: '#8a8c90', gray: '#8a8c90', beige: '#d8ccb0', yellow: '#d8c070', blue: '#5a7aa8', tan: '#c8a880', green: '#4a6a4a' };
+  const NEUTRAL = ['#b8aa98', '#a89a8a', '#c8c0b0', '#9a9488', '#b0a090', '#d0c4ac'];
+  function osmColour(c, mat, seed) {
+    if (c) { if (c[0] === '#') return c.length === 4 ? '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3] : c.slice(0, 7); if (OSMCOL[c.toLowerCase()]) return OSMCOL[c.toLowerCase()]; }
+    if (mat === 'brick') return '#9a4a3a'; if (mat === 'glass') return '#5a7896'; if (mat === 'stone') return '#cfc4ae'; if (mat === 'concrete') return '#a8a8a4';
+    return NEUTRAL[(seed * 7 | 0) % NEUTRAL.length];
+  }
+  const storeyPx = (st) => st <= 1 ? 0 : st <= 8 ? (st - 1) * 12 : 84 + (st - 8) * 3.5;
+  // Shops that get no storefront (places, not shop units); their spots/labels stay.
+  const NOFRONT = /^(park|attraction|hotel|arts_centre|theatre|square|marketplace|information|museum|viewpoint|ferry_terminal|pitch|station|townhall|place_of_worship|events_venue|community_centre)$/;
+  const isFront = (s) => !!s.k && !NOFRONT.test(s.k);
+  const MINW = 28; // narrowest readable storefront (POIs bunched at one address get spread out around their real spot)
+  function realLayout(d) { // storefront extents: no overlaps, ordered left → right, kept out of cross streets (cached on the data)
+    if (d._lay) return d._lay;
+    const sh = d.shops.slice().sort((a, b) => a.x - b.x), out = [];
+    for (let k = 0; k < sh.length; k++) { const s = sh[k], prev = out[out.length - 1]; let x0 = Math.round(s.x - s.w / 2), x1 = Math.round(s.x + s.w / 2);
+      if (prev && x0 < prev.sx + prev.sw + 1) x0 = prev.sx + prev.sw + 1; const nx = sh[k + 1]; if (nx) x1 = Math.min(x1, Math.round((s.x + nx.x) / 2)); if (x1 - x0 < 10) { x1 = x0 + 10; }
+      out.push(Object.assign({}, s, { x0: s.x, sx: x0, sw: x1 - x0, front: isFront(s) })); }
+    // 1-D packing of the real shop units per street segment: each keeps ≥ MINW px and sits as close to its OSM position as possible
+    const cuts = [0, ...(d.cross || []).filter(c => c.x != null && c.kind === 'street').flatMap(c => [c.x - 2, c.x + GAP + 2]), d.W].sort((a, b) => a - b);
+    for (let i = 0; i + 1 < cuts.length; i += 2) {
+      const L = cuts[i], Rr = cuts[i + 1], its = out.filter(s => { if (!s.front) return false; const c = cuts.findIndex((v, j) => j % 2 === 1 && j + 1 < cuts.length && s.x0 >= v && s.x0 < cuts[j + 1]); const x = c < 0 ? s.x0 : s.x0 < (cuts[c] + cuts[c + 1]) / 2 ? cuts[c] - 1 : cuts[c + 1]; return x >= L && x < Rr; }); if (!its.length) continue;
+      const SFr = window.Storefront, est = (t) => [...t].reduce((m, c) => m + (c.charCodeAt(0) > 0x2e80 ? 6 : 3.5), 0);
+      let ws = its.map(s => { let w = Math.max(MINW, Math.min(s.sw, 70)); if (SFr) { const st = SFr.style(s, d.id), t = SFr.signText(s, st); w = Math.max(w, Math.min(58, est(t[1] || t[0]) + (st.sign === 'plaque' ? 9 : 6))); } return Math.round(w); }); const tot = ws.reduce((a, b) => a + b + 1, 0); if (tot > Rr - L) { const f = (Rr - L) / tot; ws = ws.map(w => Math.max(10, Math.floor(w * f))); }
+      let blocks = its.map((s, j) => ({ j0: j, j1: j, w: ws[j], want: s.x0 - ws[j] / 2 }));
+      const place = (b) => { let acc = 0, sum = 0; for (let j = b.j0; j <= b.j1; j++) { sum += its[j].x0 - ws[j] / 2 - acc; acc += ws[j] + 1; } b.w = acc - 1; b.l = Math.max(L, Math.min(Rr - b.w, sum / (b.j1 - b.j0 + 1))); };
+      blocks.forEach(place);
+      for (let again = 1; again;) { again = 0; for (let k = 1; k < blocks.length; k++) { const a = blocks[k - 1], b = blocks[k]; if (b.l < a.l + a.w + 1) { a.j1 = b.j1; place(a); blocks.splice(k, 1); again = 1; break; } } }
+      for (const b of blocks) { let x = Math.round(b.l); for (let j = b.j0; j <= b.j1; j++) { const s = its[j]; s.sx = x; s.sw = ws[j]; s.x = x + Math.round(ws[j] / 2); x += ws[j] + 1; } }
+    }
+    return (d._lay = out);
+  }
+  function realBuilding(p, b, ox, tn, tod, night, aid) {
+    let st = b.style || ((b.st || 3) >= 12 ? 'tower' : b.mat === 'brick' || b.c === 'red' ? 'brick' : 'low');
+    if (st === 'tower' && b.w > 150 && !b._pod) { // wide tower footprints: draw a 3-storey podium and a set-back tower (approximate massing)
+      realBuilding(p, Object.assign({}, b, { st: 3, style: 'low', _pod: 1 }), ox, tn, tod, night);
+      const tw = Math.min(130, Math.round(b.w * .4)); return realBuilding(p, Object.assign({}, b, { x: b.x + Math.round((b.w - tw) / 2), w: tw, _pod: 1, _shops: true, _set: 1 }), ox, tn, tod, night);
+    }
+    const x = b.x - ox, w = b.w, top = Math.round(196 - storeyPx(b.st || 3));
+    const base = osmColour(b.c, b.mat, (b.osm || '').length + b.x), col = mix(base, tn.near, night ? .55 : tod === 'day' ? 0 : .22), dk = mix(col, '#000', .22), hi = mix(col, '#fff', .18);
+    const lit = (xx, yy) => hash(xx * 3 + b.x, yy) < (night ? .45 : tod === 'golden' ? .2 : 0);
+    const glass = (xx, yy) => night ? (lit(xx, yy) ? tn.lit : '#1a2240') : mix('#8aa8c8', '#e8f0f8', hash(xx, yy) * .35);
+    const bot = b._set ? 172 : 232; // a set-back tower stops behind the podium roof
+    p.r(x, top, w, bot - top, col); p.r(x + w - 2, top, 2, bot - top, dk); p.r(x, top, w, 2, hi);
+    if (st === 'tower') {
+      const isGlass = b.mat === 'glass' || /^#[4-6][0-9a-f]{3}[a-f89][0-9a-f]$/i.test(base) || b.c === '#4169e1';
+      for (let yy = top + 4; yy < (b._set ? 170 : 190); yy += 4) for (let xx = x + 2; xx < x + w - 3; xx += isGlass ? 4 : 5) p.r(xx, yy, isGlass ? 3 : 2, 2, isGlass ? glass(xx, yy) : (night && lit(xx, yy) ? tn.lit : mix(col, '#1a2030', .55)));
+      if (!b._set) p.r(x, 190, w, 6, dk);
+    } else if (st === 'brick') {
+      for (let yy = top + 3; yy < 196; yy += 3) p.r(x + 1, yy, w - 3, 1, mix(col, '#000', .08));
+      const her = aid === 'distillery'; // Gooderham & Worts heritage brick: segmental-arched windows with stone sills, corbelled cornice
+      for (let yy = top + 6; yy < 186; yy += 12) for (let xx = x + 4; xx < x + w - 8; xx += 9) { p.r(xx, yy, 5, 7, glass(xx, yy)); p.r(xx - 1, yy - 1, 7, 1, mix(col, '#e8d8c0', .4)); p.px(xx, yy, col); p.px(xx + 4, yy, col);
+        if (her) { p.r(xx - 1, yy - 2, 7, 1, mix(col, '#2a1a14', .25)); p.r(xx + 2, yy, 1, 7, mix(col, '#1a1a1a', .5)); p.r(xx, yy + 3, 5, 1, mix(col, '#1a1a1a', .5)); p.r(xx - 1, yy + 7, 7, 1, mix(col, '#e8dcc8', .55)); } }
+      if (her) for (let xx = x + 1; xx < x + w - 2; xx += 4) p.r(xx, top + 3, 2, 2, mix(col, '#2a1a14', .3));
+      p.r(x - 1, top, w + 2, 3, mix(col, '#2a1a14', .3));
+      if (b.chimney) { p.r(x + w - 14, top - 40, 8, 40, col); p.r(x + w - 15, top - 42, 10, 3, dk); p.r(x + w - 12, top - 30, 4, 1, '#f4f0e6'); }
+    } else if (st === 'beaux') { // Union Station (Front St): giant fluted limestone columns between end pavilions, attic + cornice above
+      const stone = mix(col, '#fff', .28), sh = mix(col, '#6a6050', .35), recess = night ? '#ffd88a' : mix('#3a3428', tn.near, tod === 'day' ? 0 : .3);
+      p.r(x, top, w, 3, hi); p.r(x, top + 3, w, 1, dk); for (let xx = x; xx < x + w; xx += 3) p.px(xx, top + 4, dk); // cornice + dentils
+      p.r(x, top + 5, w, 7, col); p.r(x, top + 12, w, 1, dk); // attic
+      const pav = Math.min(40, Math.round(w * .09)), c0 = x + pav, c1 = x + w - pav;
+      for (const px0 of [x, c1]) { p.r(px0, top + 13, pav, 232 - top - 13, mix(col, '#fff', .12)); for (let yy = top + 22; yy < 220; yy += 14) for (let xx = px0 + 5; xx < px0 + pav - 7; xx += 10) { p.r(xx, yy + 2, 6, 8, glass(xx, yy)); p.r(xx + 1, yy, 4, 2, glass(xx, yy)); p.px(xx, yy + 1, glass(xx, yy)); p.px(xx + 5, yy + 1, glass(xx, yy)); p.r(xx - 1, yy + 10, 8, 1, hi); } }
+      p.r(c0, top + 13, c1 - c0, 232 - top - 13, recess); // deep shadowed loggia behind the columns
+      if (!night) for (let yy = top + 30; yy < 228; yy += 12) p.r(c0, yy, c1 - c0, 1, mix(recess, '#000', .25)); else for (let xx = c0 + 4; xx < c1 - 4; xx += 10) p.r(xx, 206, 6, 22, '#fff0c0');
+      for (let xx = c0 + 3; xx < c1 - 6; xx += 10) { // a column: base, fluted shaft, Doric capital
+        p.r(xx - 1, top + 13, 7, 3, stone); p.r(xx, top + 16, 5, 226 - top - 16, stone); for (let f = 1; f < 5; f += 2) p.r(xx + f, top + 17, 1, 226 - top - 18, sh); p.r(xx + 4, top + 16, 1, 226 - top - 16, dk); p.r(xx - 1, 226, 7, 2, stone); }
+      p.r(x, 228, w, 4, mix(col, '#000', .1)); p.r(c0, 227, c1 - c0, 1, hi);
+    } else if (st === 'westin') { // Westin Harbour Castle: exposed-aggregate precast podium / towers with horizontal glass bands (heritage report, 1975 design)
+      const conc = mix('#c8c0b0', tn.near, night ? .55 : tod === 'day' ? 0 : .22), cd = mix(conc, '#000', .18), band = (yy) => night ? (lit(x, yy) ? tn.lit : '#1a2240') : mix('#5a7088', '#a8c0d8', hash(yy, b.x) * .4);
+      p.r(x, top, w, 232 - top, conc); for (let yy = top; yy < 232; yy += 2) for (let xx = x + (yy & 2) / 2; xx < x + w; xx += 3) p.px(xx, yy, mix(conc, '#fff', .1)); // aggregate speckle
+      if ((b.st || 3) >= 12) { // tower: alternating glass and protruding concrete bands, round restaurant on top
+        for (let yy = top + 6; yy < 190; yy += 4) { p.r(x + 1, yy, w - 2, 2, band(yy)); p.r(x, yy + 2, w, 1, mix(conc, '#fff', .15)); }
+        p.r(x + w - 3, top, 3, 190 - top, cd); const cx = x + (w >> 1); p.r(cx - 10, top - 7, 20, 7, night ? '#ffd88a' : '#6a88a8'); p.r(cx - 11, top - 8, 22, 1, '#8a8a90'); p.r(cx - 11, top, 22, 1, '#8a8a90'); p.r(cx - 2, top - 12, 4, 4, '#8a8a90');
+      } else { // podium: two big window bands, sloped top, open colonnade at ground level
+        const pt = Math.min(top, 196 - 48); p.r(x, pt, w, 196 - pt, conc); p.tri(x, pt - 6, w, 6, cd);
+        for (const yy of [pt + 8, pt + 24]) { p.r(x + 2, yy, w - 4, 9, band(yy)); for (let xx = x + 8; xx < x + w - 4; xx += 10) p.r(xx, yy, 1, 9, cd); }
+        p.r(x, 196, w, 36, night ? '#2a2430' : '#4a4640'); for (let xx = x + 4; xx < x + w - 6; xx += 18) { p.r(xx, 196, 5, 36, conc); p.r(xx + 4, 196, 1, 36, cd); }
+        p.r(x, 194, w, 2, cd); if (night) for (let xx = x + 12; xx < x + w - 8; xx += 18) p.r(xx, 208, 6, 20, mix(tn.lit, '#000', .2));
+      }
+      return;
+    } else { // low / old office / pavilion: punched windows, cornice
+      for (let yy = top + 5; yy < 186; yy += 12) for (let xx = x + 4; xx < x + w - 7; xx += 9) p.r(xx, yy, 5, 7, glass(xx, yy));
+      p.r(x - 1, top, w + 2, 2, mix(col, '#fff', .3)); if (st === 'old') { p.r(x - 2, top + 2, w + 4, 2, dk); for (let yy = top + 16; yy < 190; yy += 12) p.r(x, yy, w, 1, hi); }
+    }
+    if (b._set) return;
+    p.r(x, 194, w, 2, mix(col, '#000', .35)); // ground-floor fascia line
+    if (!b._shops) { for (let xx = x + 4; xx < x + w - 10; xx += 14) p.r(xx, 202, 10, 30, night ? mix(tn.lit, '#000', .2) : '#6a8aa8'); } // lobby glazing
+  }
+  function realChunk(R, cfg, i, tod) {
+    const d = cfg.real, key = `rs:${cfg.id}:${i}:${tod}`, tn = TONE[tod], night = tod === 'night', ox = i * 240;
+    return layer(key, 240, 272, (p) => {
+      const g = p.g, lay = realLayout(d);
+      const fr = lay.filter(q => q.front), SF = window.Storefront, E = { tod, night, tn, k: night ? .5 : tod === 'day' ? 0 : .2, area: d.id };
+      const occ = (b) => fr.some(s => s.sx < b.x + b.w && s.sx + s.sw > b.x);
+      const BS = (window.MM_SHOPSTYLE && window.MM_SHOPSTYLE[cfg.city || 'toronto'] || {}).bld || {};
+      for (const b of d.buildings) { if (b.x + b.w < ox - 20 || b.x > ox + 260) continue; b._shops = occ(b); const bs = b.name && Object.keys(BS).find(n => b.name.startsWith(n)); realBuilding(p, bs && !b.style ? Object.assign({}, b, { style: BS[bs].style }) : b, ox, tn, tod, night, d.id); }
+      // storefronts: each real shop drawn by the param-driven renderer (js/hub/storefront.js, styles in js/cities/<city>-shops.js)
+      const vis = fr.filter(s => s.sx - ox < 244 && s.sx + s.sw - ox > -4);
+      if (SF) for (const s of vis) SF.draw(p, s, ox, E);
+      // ground
+      const gr = d.ground || 'city';
+      if (gr === 'cobble') { p.r(0, 232, 240, 40, night ? '#3a3430' : '#7a6a5a'); for (let yy = 234; yy < 272; yy += 4) for (let xx = (yy / 4 % 2) * 3; xx < 240; xx += 6) p.r(xx, yy, 5, 3, night ? '#4a423a' : hash(xx + ox, yy) < .3 ? '#8a7a68' : '#6e5e50'); p.r(0, 232, 240, 1, '#2a2420'); }
+      else {
+        const walk = gr === 'promenade' ? (night ? '#5a5a62' : '#b8b4ac') : (night ? '#55555e' : '#a8a8b0');
+        p.r(0, 232, 240, 12, walk); for (let xx = -(ox % 16); xx < 240; xx += 16) p.r(xx, 232, 1, 12, mix(walk, '#000', .15)); p.r(0, 244, 240, 2, '#d8d8e0');
+        p.r(0, 246, 240, 26, night ? '#22242e' : '#4a4c56'); for (let xx = -(ox % 20); xx < 240; xx += 20) p.r(xx, 258, 10, 1, cfg.lane || '#e8e0a0');
+        if (cfg.tram) { if (gr === 'promenade') { p.r(0, 250, 240, 14, night ? '#2a2a30' : '#5a5a54'); p.r(0, 249, 240, 1, '#c8c8c0'); p.r(0, 264, 240, 1, '#c8c8c0'); } p.r(0, 252, 240, 1, '#8a8a94'); p.r(0, 262, 240, 1, '#8a8a94'); }
+      }
+      // cross streets: receding road between the buildings + zebra
+      for (const c of d.cross) { if (c.x == null || c.kind !== 'street') continue; const lx = c.x - ox; if (lx + GAP < 0 || lx > 240) continue;
+        g.clearRect(lx, 0, GAP, 190);
+        const rd = night ? '#22242e' : '#4a4c56', sw = night ? '#55555e' : '#a8a8b0';
+        for (let yy = 190; yy < 232; yy++) { const k = (yy - 190) / 42, hw = 6 + k * 16, cx = lx + GAP / 2; p.r(cx - hw - 3 * k - 1, yy, 3 * k + 1, 1, sw); p.r(cx - hw, yy, hw * 2, 1, rd); p.r(cx + hw, yy, 3 * k + 1, 1, sw); if ((yy >> 2) % 2) p.px(cx, yy, cfg.lane || '#e8e0a0'); }
+        g.clearRect(lx, 0, GAP, 190 - 0); p.r(lx, 232, GAP, 14, rd); for (let xx = 3; xx < GAP - 3; xx += 5) p.r(lx + xx, 233, 3, 10, '#ecece4');
+        for (let yy = 248; yy < 271; yy += 4) p.r(lx + 3, yy, GAP - 6, 2, '#ecece4');
+      }
+      if (SF) for (const s of vis) SF.front(p, s, ox, E);
+      if (d.ground === 'cobble') for (const c of d.cross) if (c.kind === 'corner') { const lx = c.x - ox + 24; if (lx > -4 && lx < 244) { p.r(lx, 150, 2, 82, mix('#2a1a14', tn.near, .3)); } } // the 90° corner (Tank House Ln → Trinity St)
+    });
+  }
+  return { NOFRONT, isFront, realChunk, realLayout, REAL, TODS, WEATHERS, TOD_NAME, WEA_NAME, TONE, SKY, LM, ROOMS, F, SHOPKINDS, hash, mix, drawView, windowFrame, roomBack, streetChunk, shopsIn, layer, P, GAP };
 })();

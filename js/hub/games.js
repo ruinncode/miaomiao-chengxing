@@ -9,7 +9,7 @@
   const DT = 1 / 60, FLOOR = 232, SPD = 80;
   const MG = window.MiniGames = [
     { id: 'fish', name: '抢小鱼', m: 'vs', arg: { only: 'fish' }, c: '#3a7ac8', tip: '对战 · 谁抢到的小鱼多' },
-    { id: 'knock', name: '猫拳擂台', m: 'vs', arg: { only: 'knock' }, c: '#c8566a', tip: '对战 · 把对方拍下台' },
+    { id: 'knock', name: '猫拳擂台', m: 'vs', arg: { only: 'knock' }, c: '#b8643a', tip: '对战 · 把对方拍下台' },
     { id: 'vacuum', name: '躲避扫地机', m: 'vs', arg: { only: 'vacuum' }, c: '#4a9a6a', tip: '对战 · 坚持到最后' },
     { id: 'match', name: '五局三胜', m: 'vs', arg: {}, c: '#8a5ac8', tip: '三个小游戏轮流来' },
     { id: 'coop', name: '合作闯关', m: 'coop', arg: { lv: 0 }, c: '#c89a3a', tip: '10 个关卡 · 一起回家', coop: true },
@@ -39,7 +39,7 @@
     draw(R, s) {
       const C = R.C, t = R.t;
       R.rect(0, 0, 480, 272, '#1e1830'); for (let x = 0; x < 480; x += 32) R.rect(x, 0, 16, 190, '#241d3a');
-      for (let i = 0; i < 24; i++) { const on = ((t * 3 + i) | 0) % 3 === 0; R.rect(10 + i * 20, 20, 6, 4, on ? '#ff8fb8' : '#5a3a6a'); }
+      for (let i = 0; i < 24; i++) { const on = ((t * 3 + i) | 0) % 3 === 0; R.rect(10 + i * 20, 20, 6, 4, on ? '#f3a85e' : '#5a3a6a'); }
       R.text('🕹 小游戏厅' + (s.place ? ' · ' + s.place : ''), 240, 30, { al: 'c', size: 24, c: '#ffd6e6' });
       R.rect(0, 190, 480, 82, '#3a2e4a'); for (let y = 190; y < 272; y += 10) for (let x = ((y / 10) % 2) * 10; x < 480; x += 20) R.rect(x, y, 10, 10, '#423554');
       MG.concat([{ id: 'hh', name: '掌机柜台', c: '#5a5a7a', tip: '借一台掌机' }]).forEach((g, i) => {

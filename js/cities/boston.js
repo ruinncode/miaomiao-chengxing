@@ -29,7 +29,7 @@ Cities.quick({
       lib: [1500, '旧书店的阅读角', 'books'] },
     { id: 'beacon', name: '灯塔山 · 查尔斯河', view: 'river', start: 400, bench: 800, benchName: '河滨步道的长椅',
       street: { len: 7, cars: false, cross: [3], names: ['Mt Vernon St'], label: 'Charles St', styles: ['brick', 'brick'], shops: ['flowers', 'cafe', 'grocery', 'books'], trees: true },
-      sign: [1400, '灯塔山的砖头人行道和煤气路灯，从十九世纪一直保留到现在。'] },
+      sign: [1400, '灯塔山的砖砌步道和煤气路灯，从十九世纪一直保留到现在。'] },
     { id: 'common', name: '波士顿公园 · 自由之路', view: 'common', start: 400, bench: 1300, benchName: '公园里的长椅',
       street: { len: 6, cross: [2], names: ['Tremont St'], label: 'Park St', styles: ['old', 'brick', 'glass'], shops: ['cafe', 'bakery', 'gift', 'books'], trees: true },
       sign: [600, '自由之路（Freedom Trail）是地上一条红砖线，串起 16 个历史地点。'] },

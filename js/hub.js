@@ -13,10 +13,10 @@ window.Hub = (function () {
   const AW = 480, AH = 272, S = 2;
   const FILES = { // mode -> scripts it needs (loaded in order)
     study: ['js/hub/scenery.js', 'js/hub/study.js'],
-    travel: ['js/hub/scenery.js', 'js/cities/index.js', 'js/hub/travel.js', 'js/hub/travel2.js', 'js/hub/trip.js', 'js/hub/study.js'],
+    travel: ['js/hub/scenery.js', 'js/cities/toronto-streets.js', 'js/cities/toronto-shops.js', 'js/hub/storefront.js', 'js/cities/index.js', 'js/hub/travel.js', 'js/hub/travel2.js', 'js/hub/trainview.js', 'js/hub/trip.js', 'js/hub/suite.js', 'js/hub/maps.js', 'js/hub/study.js'],
     games: ['js/hub/games.js'],
     handheld: ['js/hub/games.js', 'js/hub/handheld.js'],
-    diary: ['js/hub/scenery.js', 'js/cities/index.js', 'js/hub/diary.js'],
+    diary: ['js/hub/scenery.js', 'js/cities/toronto-streets.js', 'js/cities/toronto-shops.js', 'js/hub/storefront.js', 'js/cities/index.js', 'js/hub/diary.js'],
   };
   const loaded = {};
   function loadScript(src) {
@@ -103,7 +103,7 @@ window.Hub = (function () {
   }
 
   // pixel palette (slate night + warm accents)
-  const C = { ink: '#0d0f17', ink2: '#1a1f2e', slate: '#222b3d', slate2: '#2e3a52', edge: '#3a4763', edge2: '#566788', paper: '#e8e4f0', dim: '#9aa3bd', gold: '#f3c55e', pink: '#ff8fb8', pinkd: '#d9588f', mint: '#8fe0b0', blue: '#8fd0f6', red: '#e8577a', cream: '#fff3d6', brown: '#8a5a3a' };
+  const C = { ink: '#0d0f17', ink2: '#1a1f2e', slate: '#222b3d', slate2: '#2e3a52', edge: '#3a4763', edge2: '#566788', paper: '#e8e4f0', dim: '#9aa3bd', gold: '#f3c55e', warm: '#f3a85e', warmd: '#c8743a', mint: '#8fe0b0', blue: '#8fd0f6', red: '#e04a48', cream: '#fff3d6', brown: '#8a5a3a' };
   const R = {
     AW, AH, C, S, get ctx() { return ctx; }, t: 0,
     who() { return App.role === 'local' ? (R.localWho || 0) : App.me; }, localWho: 0,
@@ -113,14 +113,14 @@ window.Hub = (function () {
     px(x, y, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x) * S, Math.round(y) * S, S, S); },
     // text: size 12 = 6 art px tall; 24 = 12 art px tall. x,y in art px. align: l/c/r
     text(str, x, y, o = {}) {
-      const size = o.size || 12, col = o.c || C.paper; ctx.font = `${size}px Zpix, monospace`; ctx.textBaseline = 'top';
+      const size = o.size || 12, col = o.c || C.paper; ctx.font = `${o.it ? 'italic ' : ''}${size}px Zpix, monospace`; ctx.textBaseline = 'top';
       let X = Math.round(x * S); const w = ctx.measureText(str).width;
       if (o.al === 'c') X = Math.round(x * S - w / 2); else if (o.al === 'r') X = Math.round(x * S - w);
       const Y = Math.round(y * S);
       if (o.sh !== false) { ctx.fillStyle = o.shc || C.ink; ctx.fillText(str, X + (size >= 24 ? 2 : 1) * (o.shk || 1), Y + (size >= 24 ? 2 : 1) * (o.shk || 1)); }
-      ctx.fillStyle = col; ctx.fillText(str, X, Y); return w / S;
+      ctx.fillStyle = col; ctx.fillText(str, X, Y); if (o.b) ctx.fillText(str, X + 1, Y); return w / S;
     },
-    tw(str, size = 12) { ctx.font = `${size}px Zpix, monospace`; return ctx.measureText(str).width / S; },
+    tw(str, size = 12, it) { ctx.font = `${it ? 'italic ' : ''}${size}px Zpix, monospace`; return ctx.measureText(str).width / S; },
     clip(str, maxW, size = 12) { str = String(str); if (R.tw(str, size) <= maxW) return str; while (str.length > 1 && R.tw(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; },
     wrap(str, x, y, maxW, o = {}) { const size = o.size || 12, lh = o.lh || (size / S + 3); let line = '', yy = y; for (const ch of String(str)) { if (ch === '\n' || R.tw(line + ch, size) > maxW) { R.text(line, x, yy, o); yy += lh; line = ch === '\n' ? '' : ch; } else line += ch; } if (line) R.text(line, x, yy, o); return yy + lh - y; },
     panel(x, y, w, h, o = {}) {
@@ -187,12 +187,12 @@ window.Hub = (function () {
       const af = s.af || [-1, -1, -1, 0, 0, 0];
       if (af[0] >= 0 && cats[0] && cats[1]) {
         const l = af[1], k = cats[0].k || 1, hx = (cats[0].x + cats[1].x) / 2, hy = Math.max(cats[0].y, cats[1].y), sq = 1 + Math.sin(af[0] * 9) * 0.04;
-        cats[l] = Object.assign({}, cats[l], { x: hx - 7 * k, y: hy, pose: 'hug', flip: false, qx: sq, qy: 2 - sq });
-        cats[1 - l] = Object.assign({}, cats[1 - l], { x: hx + 7 * k, y: hy, pose: af[0] > 0.4 ? 'hug' : 'happy1', flip: true, qx: sq, qy: 2 - sq });
+        cats[l] = Object.assign({}, cats[l], { x: hx - 5 * k, y: hy, pose: 'hug', flip: false, qx: sq, qy: 2 - sq });
+        cats[1 - l] = Object.assign({}, cats[1 - l], { x: hx + 5 * k, y: hy, pose: af[0] > 0.4 ? 'hug' : 'happy1', flip: true, qx: sq, qy: 2 - sq });
         if (Math.random() < 0.12) R.spark(hx, hy - 26 * k, 'heart');
       }
       for (let i = 0; i < 2; i++) { const c = cats[i]; if (!c) continue; let pose = c.pose; if (af[3 + i] && af[0] < 0) pose = 'nuzzle'; R.cat(i, pose, c.x, c.y, { flip: c.flip, k: c.k, qx: c.qx, qy: c.qy, a: c.a }); }
-      for (let i = 0; i < 2; i++) { const c = cats[i]; if (!c) continue; if (c.tag !== false) R.nameTag(i, c.x, c.y - 24 * (c.k || 1) - 2); if (af[2] === i) { const b = Math.sin(R.t * 8) > 0 ? 1 : 0; R.heart(c.x - 3, c.y - 24 * (c.k || 1) - 18 - b, 1, C.pink); } }
+      for (let i = 0; i < 2; i++) { const c = cats[i]; if (!c) continue; if (c.tag !== false) R.nameTag(i, c.x, c.y - 24 * (c.k || 1) - 2); if (af[2] === i) { const b = Math.sin(R.t * 8) > 0 ? 1 : 0; R.heart(c.x - 3, c.y - 24 * (c.k || 1) - 18 - b, 1, C.red); } }
     },
     fx: [], // transient particles {x,y,vx,vy,life,kind}
     spark(x, y, kind = 'heart', n = 1) { for (let i = 0; i < n; i++) R.fx.push({ x: x + (Math.random() - 0.5) * 12, y, vx: (Math.random() - 0.5) * 12, vy: -14 - Math.random() * 10, life: 1.4, kind }); },
@@ -224,7 +224,7 @@ window.Hub = (function () {
     R.drawFx(dt);
     // affection overlay (hug requests are drawn by the mode; here: global hug button for touch)
     if (M.hugButton !== false && s.c && s.c[0] && s.c[1]) {
-      R.btn(AW - 20, AH - 20, 18, 18, '', () => App.hug(R.who()), { c: '#7a3a52', icon: (x, y) => R.heart(x + 5, y + 6, 1, C.pink) });
+      R.btn(AW - 20, AH - 20, 18, 18, '', () => App.hug(R.who()), { c: '#7a4a2a', icon: (x, y) => R.heart(x + 5, y + 6, 1, C.red) });
     }
   }
   return {
@@ -246,7 +246,7 @@ window.Diary = (function () {
   const save = (d) => { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} };
   const ACH = [
     { id: 'hug1', name: '第一个抱抱', need: d => (d.n.hug || 0) >= 1 },
-    { id: 'hug10', name: '抱抱达人 ×10', need: d => (d.n.hug || 0) >= 10 },
+    { id: 'hug10', name: '抱抱大师 ×10', need: d => (d.n.hug || 0) >= 10 },
     { id: 'hug50', name: '离不开彼此 ×50', need: d => (d.n.hug || 0) >= 50 },
     { id: 'cuddle1', name: '一起窝着', need: d => (d.n.cuddle || 0) >= 1 },
     { id: 'night3', name: '三个晚安', need: d => (d.n.goodnight || 0) >= 3 },

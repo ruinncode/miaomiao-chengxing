@@ -15,6 +15,9 @@ window.Cities = (function () {
     ['montreal', '蒙特利尔', 'Montréal', '加拿大', 3], ['amsterdam', '阿姆斯特丹', 'Amsterdam', '荷兰', 3], ['barcelona', '巴塞罗那', 'Barcelona', '西班牙', 3], ['rome', '罗马', 'Roma', '意大利', 3],
   ].map(([id, name, local, country, tier]) => ({ id, name, local, country, tier, file: 'js/cities/' + id + '.js' }));
   const READY = ['toronto', 'waterloo', 'tokyo', 'kyoto', 'paris', 'nyc', 'boston', 'vancouver', 'london', 'seoul', 'hongkong']; LIST.forEach(c => { c.ready = READY.includes(c.id); });
+  // only finished cities stay in the list (no 筹备中 rows); only polished ones go on the departures board
+  for (let i = LIST.length - 1; i >= 0; i--) if (!LIST[i].ready) LIST.splice(i, 1);
+  const BOARD = ['toronto']; LIST.forEach(c => { c.board = BOARD.includes(c.id); });
   const DATA = {}, LOADING = {};
   function load(id) {
     if (DATA[id]) return Promise.resolve(DATA[id]);

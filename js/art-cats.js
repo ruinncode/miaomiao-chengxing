@@ -82,7 +82,7 @@ window.CatArt = (function () {
     [[-0.5, 0.5, 0.5, -0.5], [0, 0, 0, 0], -1],
     [[1, -1, -1, 1], [0, 1, 1, 0], 0],
   ];
-  const POSES = {
+  let POSES = {
     idle0: P({ body: BODY, legs: legsStand(), tail: TAILS.up }),
     idle1: P({ body: BODY, legs: legsStand(), tail: TAILS.flick }),
     blink: P({ body: BODY, legs: legsStand(), tail: TAILS.up, head: [15, 6, 'blink'] }),
@@ -135,6 +135,74 @@ window.CatArt = (function () {
   ];
   RUN.forEach((r, i) => { POSES['run' + i] = P({ body: r.body, legs: r.legs, tail: i % 2 ? TAILS.back : TAILS.up2, head: [r.head[0], r.head[1], 'open'] }); });
 
+  // ---- upright (two-legged) rig — every cat in this world walks on two legs ----
+  //  Vertical body, two legs with feet, two arms (far arm behind the body, near arm in front),
+  //  tail behind the rump. Same canvas / FOOT / anchor as the old four-legged set, so hitboxes,
+  //  name tags and online sync are unchanged. Lying poses (loaf / sleep) stay four-legged.
+  const QUAD = POSES;
+  const UT = {
+    up:    [[11.8, 17.2], [9.6, 17.9], [7.6, 17.1], [6.2, 15.3], [5.8, 13.3], [6.5, 11.7]],
+    flick: [[11.8, 17.2], [9.6, 17.9], [7.6, 17.1], [6.2, 15.3], [5.6, 13.4], [5.6, 11.9], [6.6, 11.0]],
+    up2:   [[11.8, 17.2], [9.6, 17.8], [7.5, 16.8], [6.3, 14.8], [6.3, 12.8], [7.2, 11.6]],
+    high:  [[11.8, 17.0], [9.8, 16.9], [7.8, 15.6], [6.9, 13.2], [7.3, 10.6], [8.4, 9.4]],
+    back:  [[11.8, 17.2], [9.6, 17.6], [7.4, 17.0], [5.4, 15.8], [4.0, 14.6]],
+    low:   [[11.8, 17.4], [9.6, 18.4], [7.8, 19.2], [6.2, 19.4]],
+    floor: [[11.8, 19.6], [9.4, 20.6], [7.2, 20.7], [5.6, 20.0]],
+  };
+  // o: b bob · lean (deg) · fl/nl [foot x, lift] far/near · fa/na [hand x, y] far/near · head [dx, dy, map] · tail · sit · dev
+  function U(o) {
+    const b = o.b || 0, fl = o.fl || [13.6, 0], nl = o.nl || [15.9, 0], sit = o.sit;
+    const legs = [], arms = [];
+    const leg = (hx, f, far) => {
+      if (sit) { legs.push([hx, 19.2 + b, f[0], 20.4 - f[1], 1.15, far], [f[0], 20.4 - f[1], f[0] + 0.6, 19.4 - f[1], 0.95, far]); return; }
+      const fy = FOOT - f[1]; legs.push([hx, 17.2 + b, f[0], fy, 1.1, far], [f[0], fy, f[0] + 1.3, fy, 0.95, far]);
+    };
+    leg(13.7, fl, 1); leg(15.6, nl, 0);
+    const fa = o.fa || [12.8, 15.6], na = o.na || [17.4, 15.8];
+    arms.push([13.4, 11.4 + b, fa[0], fa[1] + b, 0.95, 1], [15.9, 11.6 + b, na[0], na[1] + b, 0.95, na[1] < 9 ? 2 : 0]); // raised near paw tucks behind the head
+    const h = o.head || [0, 0, 'open'];
+    return { up: 1, body: [[14.6, 13.7 + b + (sit ? 1.4 : 0), 3.7, sit ? 3.9 : 4.5, o.lean || 0]], legs, arms, tail: UT[o.tail || 'up'], head: [10 + h[0], 1 + b + h[1] + (sit ? 2 : 0), h[2]], dev: o.dev, sit: !!sit };
+  }
+  const UP = {};
+  const STAND = { fa: [12.8, 15.6], na: [17.4, 15.8] };
+  UP.idle0 = U({ tail: 'up' });
+  UP.idle1 = U({ tail: 'flick', na: [17.6, 15.6] });
+  UP.blink = U({ tail: 'up', head: [0, 0, 'blink'] });
+  UP.look = U({ tail: 'up2', head: [0, -1, 'look'] });
+  UP.meow = U({ tail: 'high', head: [0, -1, 'meow'], na: [23.6, 5.0] }); // a little wave
+  UP.happy0 = U({ b: -2, fl: [13.4, 1], nl: [16.2, 1], fa: [6.6, 4.4], na: [23.4, 4.2], tail: 'high', head: [0, 0, 'happy'] });
+  UP.happy1 = U({ fa: [6.8, 5.2], na: [23.2, 5.0], tail: 'high', head: [0, 0, 'happy'] });
+  UP.swipe = U({ lean: 6, na: [23.0, 11.6], fa: [12.2, 14.6], tail: 'high', nl: [16.6, 0], fl: [12.6, 0] });
+  UP.hug = U({ head: [1, 0, 'happy'], na: [21.6, 12.2], fa: [21.0, 11.0], tail: 'high' });           // both arms out and around
+  UP.nuzzle = U({ head: [1, 1, 'closed'], na: [19.4, 13.6], fa: [18.6, 12.6], tail: 'high' });
+  UP.hold = U({ na: [20.6, 15.6], tail: 'up' });
+  UP.dizzy0 = U({ lean: -5, fl: [12.4, 0], nl: [17.2, 0], fa: [10.0, 12.4], na: [19.6, 12.8], tail: 'low', head: [0, 0, 'dizzy'] });
+  UP.dizzy1 = U({ lean: 5, fl: [12.8, 0], nl: [17.6, 0], fa: [10.4, 13.2], na: [20.0, 12.0], tail: 'low', head: [-1, 0, 'dizzy'] });
+  UP.sit = U({ sit: 1, fl: [18.2, 0], nl: [19.0, 0], fa: [16.4, 16.8], na: [18.0, 17.0], tail: 'floor' });
+  UP.sitBlink = U({ sit: 1, fl: [18.2, 0], nl: [19.0, 0], fa: [16.4, 16.8], na: [18.0, 17.0], tail: 'floor', head: [0, 0, 'blink'] });
+  UP.sitDoze = U({ sit: 1, fl: [18.2, 0], nl: [19.0, 0], fa: [16.4, 16.8], na: [18.0, 17.0], tail: 'floor', head: [1, 1, 'closed'] });
+  UP.play = U({ sit: 1, fl: [18.2, 0], nl: [19.0, 0], fa: [18.8, 15.4], na: [19.2, 16.0], tail: 'floor', head: [1, 1, 'open'], dev: [18, 14] }); // handheld console
+  UP.play1 = U({ sit: 1, fl: [18.2, 0], nl: [19.0, 0], fa: [18.8, 15.4], na: [19.2, 16.0], tail: 'floor', head: [1, 1, 'blink'], dev: [18, 14] });
+  UP.jump = U({ b: -1, fl: [12.6, 0], nl: [14.6, 0], fa: [7.0, 5.4], na: [23.4, 5.6], tail: 'low', head: [0, -1, 'open'] });
+  UP.leap = U({ b: -1, lean: 10, fl: [11.2, 2], nl: [13.0, 3], fa: [20.6, 9.6], na: [21.8, 10.6], tail: 'back', head: [1, 0, 'open'] });
+  UP.fall = U({ fl: [13.0, 0], nl: [16.6, 0], fa: [6.8, 4.2], na: [23.2, 4.2], tail: 'high', head: [0, 0, 'open'] });
+  UP.land = U({ b: 2, fl: [12.2, 0], nl: [17.4, 0], fa: [10.6, 15.0], na: [19.6, 15.2], tail: 'back', head: [0, 0, 'blink'] });
+  for (let i = 0; i < 6; i++) { // walk: legs alternate, arms swing opposite, body bobs at mid-stance
+    const p = i * Math.PI / 3, sn = Math.sin(p), cs = Math.cos(p), b = (i % 3 === 0) ? -1 : 0;
+    const w = (na) => U({ b, fl: [13.9 - 2.3 * sn, cs < -0.4 ? 1 : 0], nl: [15.5 + 2.3 * sn, cs > 0.4 ? 1 : 0], fa: [13.0 + 2.0 * sn, 15.4 - 0.5 * Math.abs(sn)], na: na || [17.2 - 2.0 * sn, 15.6 - 0.5 * Math.abs(sn)], tail: ['up', 'flick', 'up2'][i % 3] });
+    UP['walk' + i] = w();
+    UP['pwF' + i] = w([20.6, 15.4]); // holding paws: partner in front
+    UP['pwB' + i] = w([9.4, 15.4]);  // holding paws: partner behind
+  }
+  UP.pwFi = U({ na: [20.6, 15.4] }); UP.pwBi = U({ na: [9.4, 15.4] });
+  for (let i = 0; i < 4; i++) { // run: longer strides, forward lean, arms pumping
+    const p = i * Math.PI / 2 + Math.PI / 4, sn = Math.sin(p), cs = Math.cos(p);
+    UP['run' + i] = U({ b: i % 2 ? 0 : -1, lean: 8, fl: [14.0 - 3.2 * sn, cs < 0 ? 2 : 0], nl: [15.6 + 3.2 * sn, cs > 0 ? 2 : 0], fa: [14.6 + 3.0 * sn, 13.2], na: [17.0 - 3.0 * sn, 13.4], head: [1, 0, 'open'], tail: i % 2 ? 'back' : 'up2' });
+  }
+  for (const k of ['loaf', 'sleep0', 'sleep1']) UP[k] = QUAD[k]; // lying down stays a curled-up cat
+  for (const k of Object.keys(POSES)) if (!UP[k]) UP[k] = QUAD[k];
+  POSES = UP;
+
   // ---- rasteriser ----
   function segDist(px, py, x1, y1, x2, y2) {
     const dx = x2 - x1, dy = y2 - y1, L = dx * dx + dy * dy || 1;
@@ -156,6 +224,16 @@ window.CatArt = (function () {
       for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) if (segDist(x + 0.5, y + 0.5, x1, y1, x2, y2) < r) set(x, y, far ? 'd' : 'b', far ? 'legF' : 'leg');
     });
     legs(true);
+    const arm = (far, back) => (pose.arms || []).forEach(([x1, y1, x2, y2, r, f]) => {
+      if (back ? f !== 2 : (f === 2 || !!f !== far)) return;
+      if (back) far = false;
+      const mine = [];
+      for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) if (segDist(x + 0.5, y + 0.5, x1, y1, x2, y2) < r) mine.push([x, y]);
+      const has = new Set(mine.map(([x, y]) => x + ',' + y));
+      if (!far) for (const [x, y] of mine) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const X = x + dx, Y = y + dy; if (!has.has(X + ',' + Y) && X >= 0 && Y >= 0 && X < CW && Y < CH && (part[Y][X] === 'body' || part[Y][X] === 'head')) g[Y][X] = 'seam'; }
+      for (const [x, y] of mine) set(x, y, far ? 'd' : ((x2 - x - 0.5) ** 2 + (y2 - y - 0.5) ** 2 < 1.6 ? 'paw' : 'b'), far ? 'armF' : 'arm');
+    });
+    arm(true);
     pose.body.forEach(([cx, cy, rx, ry, a]) => {
       const ca = Math.cos(a * Math.PI / 180), sa = Math.sin(a * Math.PI / 180);
       for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
@@ -165,6 +243,7 @@ window.CatArt = (function () {
       }
     });
     legs(false);
+    arm(false, true);
     if (pose.tailFront) tail();
     // shading on non-head fur
     const filled = (x, y) => x >= 0 && y >= 0 && x < CW && y < CH && g[y][x] != null;
@@ -175,6 +254,12 @@ window.CatArt = (function () {
     for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
       const p = part[y][x]; if (!p) continue;
       if (p === 'body') {
+        if (pose.up) { // upright: lit belly at the front, shaded back, horizontal tabby bands
+          if (x >= bx1 - 1 && y > by0 + 1 && y < by1) g[y][x] = cat.tabby ? 'm' : 'h';
+          else if (x <= bx0 || !sf(x, y + 1)) g[y][x] = 'd';
+          else if (cat.tabby && y % 3 === 0 && x < bx1 - 2) g[y][x] = 's';
+          continue;
+        }
         if (!sf(x, y - 1)) g[y][x] = (x > bx0 + 2 && x < bx1 - 1) ? 'h' : 'b';
         else if (!sf(x, y + 1) || !sf(x, y + 2) && y > (by0 + by1) / 2) g[y][x] = 'd';
         else if (cat.tabby && y <= (by0 + by1) / 2 + 0.5 && ((x + (y >> 1)) % 3 === 0) && x < bx1 - 1) g[y][x] = 's';
@@ -188,12 +273,20 @@ window.CatArt = (function () {
         if (!sf(x, y + 1)) g[y][x] = cat.tabby ? 'm' : 'b'; // light paws on the tabby
       }
     }
+    for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) { if (g[y][x] === 'seam') g[y][x] = 'd'; else if (g[y][x] === 'paw') g[y][x] = cat.tabby ? 'm' : 'h'; else if (part[y][x] === 'arm' && g[y][x] === 'b' && !sf(x, y - 1)) g[y][x] = 'h'; else if (part[y][x] === 'arm' && cat.tabby && (x + y) % 3 === 0) g[y][x] = 's'; }
     // chest patch (tabby) under the head
     // head
     const [hx, hy, hk] = pose.head;
     const H = HEADS[hk] || HEADS.open;
     H.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') set(hx + x, hy + y, ch, 'head'); }));
     (pose.front || []).forEach(([x1, y1, x2, y2, r]) => { for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) if (segDist(x + 0.5, y + 0.5, x1, y1, x2, y2) < r) set(x, y, (x2 - x - 0.5) ** 2 + (y2 - y - 0.5) ** 2 < 2 ? (cat.tabby ? 'm' : 'h') : 'b', 'paw'); });
+    if (pose.arms) {
+      const keep = g.map(r => r.slice());
+      arm(false);
+      for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) { if (g[y][x] === 'seam') g[y][x] = 'o';
+        else if (part[y][x] === 'arm' && !cat.tabby && g[y][x] === 'b' && x + 1 < CW && part[y][x + 1] !== 'arm') g[y][x] = 'h'; else if (g[y][x] === 'paw') g[y][x] = cat.tabby ? 'm' : 'h'; else if (part[y][x] === 'arm' && cat.tabby && (x + y) % 3 === 0 && g[y][x] === 'b') g[y][x] = 's'; }
+    }
+    if (pose.dev) { const [dx, dy] = pose.dev; for (let y = 0; y < 3; y++) for (let x = 0; x < 5; x++) set(dx + x, dy + y, y === 0 || x === 0 || x === 4 || y === 2 ? 'C' : 'k', 'dev'); set(dx + 1, dy + 1, 'c', 'dev'); }
     // head highlight on its top edge + subtle second tone
     for (let x = 0; x < 11; x++) for (let y = 0; y < 9; y++) {
       const X = hx + x, Y = hy + y;
@@ -207,6 +300,7 @@ window.CatArt = (function () {
       for (let x = hx + 3; x <= hx + 7; x++) if (filled(x, cy + 1) && part[cy + 1][x] === 'body') g[cy + 1][x] = 'C';
       if (filled(hx + 1, cy)) g[cy][hx + 1] = 'C';
       set(hx + 6, cy + 1, 'k'); set(hx + 7, cy + 1, 'k'); set(hx + 6, cy + 2, 'K'); set(hx + 7, cy + 2, 'K'); // round tag
+      if (pose.up) { set(hx + 1, cy + 1, 'c'); set(hx, cy + 2, 'C'); set(hx + 1, cy + 2, 'C'); } // scarf end trailing behind
     } else {
       set(hx + 5, cy + 1, 'k'); set(hx + 5, cy + 2, 'K');
     }
@@ -214,7 +308,7 @@ window.CatArt = (function () {
     const out = [];
     for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) if (g[y][x] == null && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => filled(x + dx, y + dy))) out.push([x, y]);
     out.forEach(([x, y]) => { g[y][x] = 'o'; });
-    return g;
+    g.part = part; g.hx = pose.head[0]; g.hy = pose.head[1]; return g;
   }
 
   function build(scene, canvasTex) {
@@ -228,5 +322,5 @@ window.CatArt = (function () {
   }
   // body centre (x) and foot row, used to anchor sprites to the 26x24 hitbox
   const ANCHOR = { x: 15 / CW, y: (FOOT + 2) / CH };
-  return { build, CATS, POSES, HEADS, CW, CH, FOOT, ANCHOR, render };
+  return { build, CATS, POSES, QUAD, HEADS, CW, CH, FOOT, ANCHOR, render };
 })();

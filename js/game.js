@@ -88,6 +88,8 @@
   window.addEventListener('keydown', (e) => {
     if (e.target && e.target.tagName === 'INPUT') return;
     if (GAME_KEYS.includes(e.code)) e.preventDefault();
+    // a still-focused DOM button (♪, ⌂, a hub card…) must not eat game keys: Space/Enter would click it again
+    if (e.target && e.target.tagName === 'BUTTON' && window.App && App.role !== 'menu' && (GAME_KEYS.includes(e.code) || e.code === 'Enter' || e.code === 'NumpadEnter')) { e.preventDefault(); e.target.blur(); }
     if (!keys.has(e.code)) onKeyPress(e.code);
     keys.add(e.code); Sfx.unlock();
   });
@@ -128,7 +130,7 @@
   }
 
   // ---------------------------------------------------------- UI helpers
-  const SCREENS = ['screen-title', 'screen-lobby', 'screen-joining', 'screen-mode', 'screen-end', 'screen-vsend'];
+  const SCREENS = ['screen-title', 'screen-lobby', 'screen-joining', 'screen-mode', 'screen-end', 'screen-vsend', 'screen-credits'];
   let curScreen = null;
   function show(id) {
     if (curScreen === id) return;
@@ -361,7 +363,7 @@
       const f = Math.max(0, Math.min(1, (t - a.at) / Math.max(1, b.at - a.at)));
       const L = (x, y) => x + (y - x) * f;
       const s = Object.assign({}, b.s);
-      const lerpArr = (A, B, n) => (A && B && A.length === B.length) ? B.map((e, k) => { const o = e.slice(); for (let q = 0; q < n; q++) o[q] = L(A[k][q], e[q]); return o; }) : B;
+      const lerpArr = (A, B, n) => (A && B && A.length === B.length) ? B.map((e, k) => { if (!e || !A[k]) return e; const o = e.slice(); for (let q = 0; q < n; q++) o[q] = L(A[k][q], e[q]); return o; }) : B;
       s.c = lerpArr(a.s.c, b.s.c, 2);
       if (b.s.b) s.b = lerpArr(a.s.b, b.s.b, 2);
       if (b.s.v) s.v = lerpArr(a.s.v, b.s.v, 2);
@@ -432,8 +434,8 @@
     // small pixel "pill" name tag above a cat (black cat: light text on dark; white cat: dark text on light)
     makeNameTag(i) {
       const dark = i === 0;
-      const fill = dark ? 0x2b2340 : 0xfff6fa, edge = dark ? 0xfff6fa : 0x3a2e4f;
-      const txt = this.add.text(0, 0, NAMES[i], { fontFamily: FONT, fontSize: '12px', color: dark ? '#fff6fa' : '#3a2e4f', resolution: 1 });
+      const fill = dark ? 0x2b2340 : 0xfff8ec, edge = dark ? 0xfff8ec : 0x3a2e4f;
+      const txt = this.add.text(0, 0, NAMES[i], { fontFamily: FONT, fontSize: '12px', color: dark ? '#fff8ec' : '#3a2e4f', resolution: 1 });
       const tw = Math.ceil(txt.width), th = Math.ceil(txt.height);
       const w = Math.max(20, tw + 10 + ((tw + 10) % 2)), h = 16, x0 = -w / 2, y0 = -h;
       const g = this.add.graphics();
@@ -709,7 +711,7 @@
       [h.center, h.timer].forEach(o => o.setVisible(vs));
       h.side.forEach(sd => { sd.name.setVisible(vs); sd.pips.forEach(p => p.setVisible(vs)); sd.icons.forEach(p => p.setVisible(false)); sd.val.setVisible(false); sd.ficon.setVisible(false); });
       h.net.setVisible(App.role !== 'menu' && v.m !== 'attract');
-      if (App.role === 'local') h.net.setText(`本地双人 · ${NAMES[0]} WASD+F  ${NAMES[1]} 方向键+回车`);
+      if (App.role === 'local') h.net.setText(`本地双猫 · ${NAMES[0]} WASD+F  ${NAMES[1]} 方向键+回车`);
       else if (App.net) h.net.setText(App.net.connected ? `在线 · 房间 ${App.net.code} · 延迟 ${Math.round(App.net.rtt)}ms` : '连接中…');
       let big = '', sub = '', sub2 = '';
       if (coop) {
@@ -879,6 +881,8 @@
     };
     $('btn-lobby-back').onclick = () => App.toMenu();
     $('btn-join-back').onclick = () => App.toMenu();
+    $('btn-credits').onclick = () => show('screen-credits');
+    $('btn-credits-back').onclick = () => show('screen-title');
     $('btn-mode-coop').onclick = () => App.pickMode('coop');
     $('btn-mode-vs').onclick = () => App.pickMode('vs');
     $('btn-mode-back').onclick = () => App.toMenu();

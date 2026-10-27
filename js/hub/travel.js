@@ -40,7 +40,7 @@
     sig, drawCatsWalk, spotNear, bubbles, toast, fade, header, cuddleDraw, walk, edges, cuddleStep, cuddleAsk, honk: null,
   };
   window.TravelKit = K;
-  function placeName(st, cfg) { const a = K.area(st, cfg), h = K.hotel(st, cfg); const where = { lobby: h && h.name, hall: h && h.name, room: h && h.name, street: a && a.name, shop: st.arg && st.arg.name, station: st.arg && st.arg.stn, ride: st.ride && st.ride.lineName, act: st.act && st.act.name, map: '地图', hotels: '选酒店' }[st.sc]; return cfg.name + (where ? ' · ' + where : ''); }
+  function placeName(st, cfg) { const a = K.area(st, cfg), h = K.hotel(st, cfg); const where = { lobby: h && h.name, hall: h && h.name, room: h && h.name, entry: h && h.name, bath: h && h.name, balcony: h && h.name, street: a && a.name, shop: st.arg && st.arg.name, station: st.arg && st.arg.stn, ride: st.ride && st.ride.lineName, act: st.act && st.act.name, map: '地图', hotels: '选酒店' }[st.sc]; return cfg.name + (where ? ' · ' + where : ''); }
 
   // ---------------- input: edges + walking + paws ----------------
   function edges(st, inputs) {
@@ -105,8 +105,14 @@
   // ---------------- drawing helpers ----------------
   function drawCatsWalk(R, s, ox, oy = 0, o = {}) {
     const cats = [0, 1].map(i => s.c[i] ? { x: s.c[i][0] - ox, y: s.c[i][1] + oy, pose: o.pose ? o.pose(i) : K.poseOf(s, i), flip: (s.f ? s.f[i] : 1) < 0, k: o.k || 1 } : null);
+    // holding paws: upright cats walk hand in hand, the inner paw reaching for the partner's
+    const pwOn = s.pw && cats[0] && cats[1] && !o.pose;
+    if (pwOn) {
+      const L = cats[0].x <= cats[1].x ? 0 : 1;
+      cats.forEach((c, i) => { const towards = (i === L) !== c.flip; const m = /^(walk|run)(\d)$/.exec(c.pose); c.pose = (towards ? 'pwF' : 'pwB') + (m ? (+m[2]) % 6 : 'i'); });
+    }
     R.pair(s, cats);
-    if (s.pw && cats[0] && cats[1]) { const a = cats[0].x < cats[1].x ? cats[0] : cats[1], b = a === cats[0] ? cats[1] : cats[0]; R.rect(a.x + 4, a.y - 7, b.x - a.x - 8, 1, R.C.pink); R.rect((a.x + b.x) / 2 - 1, a.y - 8, 3, 3, R.C.pink); if (Math.random() < 0.02) R.spark((a.x + b.x) / 2, a.y - 26, 'heart'); }
+    if (pwOn) { const a = cats[0].x < cats[1].x ? cats[0] : cats[1], b = a === cats[0] ? cats[1] : cats[0], k = a.k || 1, hy = Math.round(a.y - 8 * k); if (b.x - a.x > 13 * k) R.rect(a.x + 6 * k, hy, b.x - a.x - 12 * k, 1, R.C.gold); R.px(Math.round((a.x + b.x) / 2), hy - 1, R.C.gold); if (Math.random() < 0.02) R.spark((a.x + b.x) / 2, a.y - 26, 'heart'); }
   }
   function toast(R, s) { if (!s.msg || s.msg[1] <= 0) return; const w = R.tw(s.msg[0]) + 16; R.panel(240 - w / 2, 20, w, 15, { fill: R.C.ink2, shadow: false }); R.text(s.msg[0], 240, 24, { al: 'c', c: R.C.cream }); }
   function fade(R, s) { if (s.fi > 0) R.rect(0, 0, 480, 272, '#000', Math.min(1, s.fi / 0.45)); }
@@ -126,12 +132,15 @@
   function cuddleDraw(R, s, ox = 0) {
     const cu = s.cud, C = R.C; if (!cu) return false;
     const x = cu.x - ox, y = cu.y, br = Math.sin(R.t * 1.6) * 0.04, seat = cu.kind === 'seat' || cu.kind === 'sofa' || cu.kind === 'windowseat' || cu.kind === 'bench' || cu.kind === 'cafe';
-    const pose = seat ? (cu.t > 4 ? 'sleep' + ((R.t * .5 | 0) % 2) : 'loaf') : 'sleep' + ((R.t * .5 | 0) % 2);
+    const pose = seat ? (cu.t > 4 ? 'sitDoze' : 'sit') : 'sleep' + ((R.t * .5 | 0) % 2); // upright cats sit side by side on seats; beds keep the curled-up lying pose
     // tails curling into a little heart between them
     const tc = ['#2b2340', '#9a6a44'];
     for (let k = 0; k < 6; k++) { R.px(x - 3 + k, y + 1 - Math.round(Math.sin(k * .9 + R.t) * 1.5), tc[0]); R.px(x + 3 - k, y + 1 - Math.round(Math.cos(k * .9 + R.t) * 1.5), tc[1]); }
     R.cat(0, pose, x - 7, y + 1, { qx: 1 - br, qy: 1 + br }); R.cat(1, pose, x + 7, y + 1, { flip: true, qx: 1 + br, qy: 1 - br });
-    if (!seat || cu.kind === 'sofa') { const bc = cu.kind === 'capsule' ? '#8fd0f6' : cu.kind === 'futon' ? '#c8566a' : '#c86a7a'; R.rect(x - 20, y - 6 + Math.sin(R.t * 1.6), 40, 8, bc); R.rect(x - 20, y - 6 + Math.sin(R.t * 1.6), 40, 1, mix(bc, '#fff', .3)); for (let i = 0; i < 40; i += 8) R.rect(x - 20 + i, y - 3 + Math.sin(R.t * 1.6), 4, 4, mix(bc, '#fff', .15)); }
+    if (!seat || cu.kind === 'sofa') { const bc = cu.kind === 'capsule' ? '#8fd0f6' : cu.kind === 'futon' ? '#4a6a8a' : cu.kind === 'sofa' ? '#8a9a6a' : '#e6dcc4', st2 = cu.kind === 'double' || cu.bed && cu.kind !== 'futon' && cu.kind !== 'capsule' ? '#a8b896' : mix(bc, '#fff', .15), by = Math.round(y - 1 + Math.sin(R.t * 1.6));
+      R.rect(x - 22, by, 44, 9, bc); R.rect(x - 22, by, 44, 2, '#f8f4ea'); R.rect(x - 23, by + 1, 1, 8, mix(bc, '#000', .15)); R.rect(x + 22, by + 1, 1, 8, mix(bc, '#000', .15)); // a quilt pulled up to their chins
+      for (let i = 4; i < 44; i += 10) R.rect(x - 22 + i, by + 3, 1, 6, st2); R.rect(x - 22, by + 6, 44, 1, st2);
+      R.rect(x - 2, by + 2, 4, 2, mix(bc, '#000', .1)); } // the dip where their paws meet
     if (Math.random() < 0.025) R.spark(x + 6, y - 18, 'zz'); if (Math.random() < 0.015) R.spark(x, y - 20, 'heart');
     return true;
   }
@@ -166,7 +175,7 @@
         const x = 12 + (i % 2) * 232, y = 124 + (i / 2 | 0) * 46;
         R.btn(x, y, 226, 42, '', { k: 'hotel', i }, { c: '#2e3a52' });
         R.text(h.name, x + 6, y + 4, { c: C.cream }); R.text(h.local || '', x + 220, y + 4, { al: 'r', c: C.dim });
-        const a = cfg.areas.find(a => a.id === h.area); R.text((a ? a.name : '') + ' · ' + (h.roomName || h.room) + ' · ' + ({ double: '双人床', futon: '榻榻米被褥', capsule: '情侣胶囊', seat: '座位' }[h.bed] || '双人床'), x + 6, y + 16, { c: C.blue });
+        const a = cfg.areas.find(a => a.id === h.area); R.text((a ? a.name : '') + ' · ' + (h.roomName || h.room) + ' · ' + ({ double: '双猫床', futon: '榻榻米被褥', capsule: '情侣胶囊', seat: '座位' }[h.bed] || '双猫床'), x + 6, y + 16, { c: C.blue });
         R.wrap(h.desc || '', x + 6, y + 27, 214, { c: C.dim, lh: 7 });
       });
       R.btn(380, 252, 92, 15, '换个城市', { k: 'pickCity' });
@@ -214,11 +223,11 @@
       // front desk
       const fx = 262 - ox; R.rect(fx, 150, 120, 12, '#2a2030'); R.text(h.local || h.name, fx + 60, 152, { al: 'c', c: C.gold });
       R.text((cfg.signs.reception || 'Reception') + ' · 前台', fx + 60, 168, { al: 'c', c: C.paper });
-      R.rect(fx + 40, 188, 14, 14, '#e8c8a0'); R.rect(fx + 39, 184, 16, 5, '#3a2a20'); R.rect(fx + 36, 200, 22, 20, pal.uniform || '#2a3a5a'); R.px(fx + 44, 194, '#222'); R.px(fx + 50, 194, '#222'); R.rect(fx + 45, 198, 4, 1, '#a0504a');
+      NPC.draw(R, fx + 50, 214, { look: 4, breed: 6, role: 'concierge', sit: 1, dir: -1, t: R.t }); NPC.draw(R, fx + 82, 214, { look: 9, breed: 0, role: 'clerk', sit: 1, dir: -1, t: R.t + 1.3 }); // front-desk cats
       R.rect(fx, 212, 120, 30, '#6a4030'); R.rect(fx, 210, 120, 3, '#e8d0a0'); R.rect(fx + 4, 216, 112, 2, '#8a5a40');
       R.rect(fx + 90, 206, 6, 4, '#e8c86a'); R.rect(fx + 92, 204, 2, 2, '#e8c86a');
       // luggage cart
-      const lx = 400 - ox; R.rect(lx, 206, 2, 34, '#e8c86a'); R.rect(lx + 22, 206, 2, 34, '#e8c86a'); R.rect(lx, 204, 24, 2, '#e8c86a'); R.rect(lx - 2, 236, 28, 3, '#e8c86a'); R.rect(lx + 3, 222, 10, 14, '#c86a7a'); R.rect(lx + 12, 226, 9, 10, '#5a8ac8');
+      const lx = 400 - ox; R.rect(lx, 206, 2, 34, '#e8c86a'); R.rect(lx + 22, 206, 2, 34, '#e8c86a'); R.rect(lx, 204, 24, 2, '#e8c86a'); R.rect(lx - 2, 236, 28, 3, '#e8c86a'); R.rect(lx + 3, 222, 10, 14, '#b8704a'); R.rect(lx + 12, 226, 9, 10, '#5a8ac8');
       // concierge board
       const bx = 428 - ox; R.rect(bx, 170, 26, 34, '#2a2030'); R.rect(bx + 2, 172, 22, 26, '#f4ecd8'); for (let i = 0; i < 4; i++) R.rect(bx + 4, 176 + i * 5, 14 + (i % 2) * 4, 2, '#8a7a6a'); R.rect(bx + 12, 204, 2, 36, '#2a2030');
       // elevators with floor indicators
@@ -245,7 +254,7 @@
     },
     act(st, sp, who, cfg, ev) {
       if (sp.k === 'elev') { ev('sfx', 'ding'); K.go(st, 'lobby', { from: 'elev' }, ev); }
-      if (sp.k === 'door') { if (sp.d === OURS) { ev('sfx', 'click'); K.go(st, 'room', { x: 60 }, ev); } else { ev('sfx', 'knock'); K.msg(st, ['这间住着别人哦', '门里传来电视声…', '请勿打扰 🚫', '有人在练小提琴'][sp.d % 4]); } }
+      if (sp.k === 'door') { if (sp.d === OURS) { ev('sfx', 'click'); K.go(st, 'room', { x: 60 }, ev); } else { ev('sfx', 'knock'); K.msg(st, ['这间住着别的猫哦', '门里传来电视声…', '请勿打扰 🚫', '有猫在练小提琴'][sp.d % 4]); } }
       if (sp.k === 'peek') K.msg(st, '走廊尽头能看到 ' + (cfg.peek || '城市的屋顶'));
     },
     draw(R, s, cfg) {
@@ -267,8 +276,9 @@
         R.rect(x + 7, 158, 3, 8, '#e8c86a'); R.rect(x + 6, 166, 5, 2, ours ? '#5af08a' : '#e8574a');
         R.rect(x - 9, 100, 18, 8, '#e8c86a'); R.text(String(h.floor * 100 + d * 2 + 1), x, 101, { al: 'c', c: '#3a2a20', sh: false });
         R.rect(x + 24, 120, 6, 6, '#ffe8a0'); R.rect(x + 20, 112, 14, 20, '#ffe8a0', .08);
-        if (ours) { R.heart(x - 3, 90 + Math.sin(R.t * 3), 1, C.pink); }
+        if (ours) { R.heart(x - 3, 90 + Math.sin(R.t * 3), 1, C.red); }
       }
+      if (K.hallDecor) K.hallDecor(R, s, cfg, ox);
       drawCatsWalk(R, s, ox);
       bubbles(R, s, SCN.hall.spots(s, cfg), ox, 84);
       header(R, s, cfg, h.name + ' · ' + h.floor + ' 楼'); toast(R, s); fade(R, s);
@@ -288,8 +298,8 @@
         { id: 'door', x: 28, w: 20, label: '出门（走廊）', k: 'door' },
         { id: 'desk', x: 92, w: 40, label: '坐下一起学习？', k: 'desk' },
         { id: 'win', x: 240, w: 60, label: '窗外风景设置', k: 'view' },
-        { id: 'bed', x: lay.bx + 70, w: 80, label: '一起窝着 ↓ / 晚安', k: 'cuddle', kind: lay.bed, bed: true, y: FLOOR - (lay.bed === 'futon' ? 6 : lay.bed === 'capsule' ? 26 : 18) },
-        { id: 'tv', x: 186, w: 24, label: '电视 · 掌机游戏', k: 'tv' },
+        { id: 'bed', x: lay.bx + (lay.bed === 'double' ? 48 : 70), w: 80, label: '一起窝着 ↓ / 晚安', k: 'cuddle', kind: lay.bed, bed: true, y: FLOOR - (lay.bed === 'futon' ? 6 : lay.bed === 'capsule' ? 26 : 24) },
+        { id: 'tv', x: 197, w: 24, label: '电视 · 掌机游戏', k: 'tv' },
       ];
       if (lay.sofa === 'windowseat') out.push({ id: 'seat', x: 240, w: 0, label: '窗边坐坐', k: 'cuddle', kind: 'windowseat', y: FLOOR - 26, by: 150 });
       return out;
@@ -309,16 +319,26 @@
       if (!rm.curtain && L.cur < .5) R.rect(W.x, W.y, W.w, W.h, '#e8dcc0', .85 - L.cur); // shoji / blinds
       // furniture
       const dim = s.cud ? Math.min(.45, s.cud.t * .2) : 0;
-      SC.F.frame(R, 30, 60, 30, 22, 1); SC.F.frame(R, 400, 56, 36, 26, 2);
-      SC.F.desk(R, 64, FLOOR + 1, 60); SC.F.lamp(R, 76, FLOOR - 29, night || dim > 0, R.t); R.rect(98, FLOOR - 38, 14, 8, '#3a3a4a'); R.rect(99, FLOOR - 37, 12, 6, '#8fd0f6');
-      R.rect(170, FLOOR - 16, 34, 16, '#5a4030'); SC.F.tv(R, 155 + 0, FLOOR - 16, !!s.tvOn, R.t); // TV on a low stand (ties into the handheld library)
+      const lampOn = night || tod === 'golden' || dim > 0, rx = W.x + W.w + 12; // room furniture, left to right: door, desk + lamp, scratching post, media console + TV, nightstand, bed, bowls
+      SC.F.frame(R, 30, 60, 30, 22, 1);
+      if (rx < 404) { SC.F.clock(R, 430, 66, s.clock); SC.F.catshelf(R, 412, 112); } else SC.F.frame(R, 400, 56, 36, 26, 2);
+      if (lay.sofa !== 'windowseat') SC.F.sill(R, W.x, W.y + W.h + 2, W.w);
+      SC.F.rug(R, 150, 248, 140, h.rug || '#4a5a7a');
+      SC.F.desk(R, 66, FLOOR + 1, 62); SC.F.lamp(R, 78, FLOOR - 29, false, R.t); R.rect(100, FLOOR - 38, 14, 8, '#3a3a4a'); R.rect(101, FLOOR - 37, 12, 6, s.study ? '#8fe0b0' : '#8fd0f6'); R.rect(116, FLOOR - 33, 8, 2, '#e8e4f0'); R.rect(117, FLOOR - 35, 6, 2, '#3f8f95');
+      SC.F.scratch(R, 140, FLOOR + 1);
+      SC.F.console(R, 152, FLOOR + 1, 90); SC.F.tv(R, 165, FLOOR - 15, !!s.tvOn, R.t); // TV on the console (ties into the handheld library)
       if (rm.plants || h.room === 'tropical') SC.F.plant(R, 140, FLOOR + 1);
-      SC.F.rug(R, 150, 248, 140, h.rug || '#7a5a8a');
       if (lay.sofa === 'windowseat') SC.F.bed(R, 'windowseat', W.x + W.w / 2 - 60, FLOOR - 8);
+      if (lay.bed === 'double') SC.F.nightstand(R, lay.bx - 32, FLOOR + 1, lampOn);
       SC.F.bed(R, lay.bed, lay.bx, FLOOR + 1);
+      if (lay.bed === 'double') SC.F.bowls(R, 450, FLOOR + 1);
       // door
       R.rect(14, 104, 30, 96, rm.trim); R.rect(16, 106, 26, 94, '#5a3a2a'); R.rect(36, 152, 3, 8, '#e8c86a');
-      if (dim > 0 || night) { R.rect(0, 0, 480, 272, '#0a0d20', (night ? .28 : 0) + dim); if (dim) { R.rect(lay.bx + 40, FLOOR - 60, 80, 60, '#ffd88a', .06); } }
+      if (dim > 0 || night || tod === 'golden') R.rect(0, 0, 480, 272, '#0a0d20', (night ? .3 : tod === 'golden' ? .08 : 0) + dim);
+      if (lampOn) { const a = night || dim ? .5 : .25; SC.F.glow(R, 78, FLOOR - 46, 34, '#ffd27a', a); SC.F.glow(R, 78, FLOOR - 46, 8, '#fff0c0', a); R.rect(64, FLOOR - 30, 30, 1, '#ffe6a0', .5); // desk lamp + the pool it throws on the desk
+        if (lay.bed === 'double') { SC.F.glow(R, lay.bx - 21, FLOOR - 30, 30, '#ffc870', a); SC.F.glow(R, lay.bx - 21, FLOOR - 30, 7, '#fff0c0', a); R.rect(lay.bx, FLOOR - 26, 40, 1, '#ffe6a0', .35); } }
+      if (s.tvOn) SC.F.glow(R, 197, FLOOR - 32, 40, '#6a9ad8', night ? .35 : .15, 4);
+      if (s.cud && lampOn) SC.F.glow(R, s.cud.x, s.cud.y - 4, 22, '#ffc870', .3);
       if (!cuddleDraw(R, s, 0)) drawCatsWalk(R, s, 0);
       if (s.cud && s.cud.bed && !s.cud.gn && (tod === 'night' || tod === 'golden')) R.btn(200, 250, 80, 15, '晚安 🌙', { k: 'goodnight' }, { c: '#3a3a6a' });
       if (s.cud && s.cud.gn) { const a = s.cud.gn < 1.2 ? s.cud.gn / 1.2 : s.cud.gn < 2.2 ? 1 : 1 - (s.cud.gn - 2.2); R.rect(0, 0, 480, 272, '#05060e', a); if (a > .6) R.text('晚安 ♥ zzz…', 240, 130, { al: 'c', size: 24, c: C.cream }); }
@@ -341,7 +361,7 @@
     OFFS.forEach(([k, n], i) => R.btn(x + 36 + (i % 5) * 40, y + 63 + (i / 5 | 0) * 14, 38, 12, n, { k: 'off', v: k }, { on: !s.off[k] }));
     R.btn(x + 36, y + 96, 70, 12, s.cur > .5 ? '拉上窗帘' : '拉开窗帘', { k: 'curtain' });
     R.btn(x + 112, y + 96, 70, 12, s.tvOn ? '关电视' : '开电视', { k: 'tv' });
-    if (s.city === 'toronto') R.btn(x + 36, y + 110, 146, 12, SC.REAL.on ? '窗外：实景照片 ✓（点切回像素）' : '窗外：像素画（点切实景照片）', () => SC.REAL.toggle(), { on: SC.REAL.on });
+    if (s.city === 'toronto') R.btn(x + 36, y + 110, 146, 12, SC.REAL.on ? '窗外：实景像素 ✓（点切手绘）' : '窗外：手绘像素（点切实景像素）', () => SC.REAL.toggle(), { on: SC.REAL.on });
     R.btn(x + w / 2 - 30, y + 128, 60, 14, '好了', { k: 'panel' });
   }
 
@@ -349,13 +369,40 @@
   const streetCache = {};
   function street(cfg, area) {
     const key = cfg.id + ':' + area.id; if (streetCache[key]) return streetCache[key];
-    const s = area.street || {}, len = s.len || 6;
+    const s = area.street || {};
+    const RD = area.real && window.MM_STREETS && MM_STREETS[cfg.id] && MM_STREETS[cfg.id].areas[area.real];
+    if (RD && RD.buildings.length) return (streetCache[key] = realStreet(cfg, area, RD, key));
+    const len = s.len || 6;
     const sc = { id: key, seed: s.seed || 3, palette: s.palette || cfg.palette, styles: s.styles || cfg.styles, walk: s.walk, lane: s.lane || cfg.laneColor, tram: !!s.tram, shops: s.shops || cfg.shops, cross: s.cross || [2, 4], hMax: s.hMax, road: s.road };
     const W = len * 240, spots = [];
     for (let i = 0; i < len; i++) for (const sh of SC.shopsIn(sc, i)) { if ((area.spots || []).some(p => Math.abs(p.x - sh.x) < 40)) continue; spots.push({ id: 'sh' + sh.x, x: sh.x + 4, w: 10, k: 'shop', kind: sh.kind, sx: sh.sx, sw: sh.sw, label: '进去看看 · ' + (cfg.signs.shop[sh.kind] || SC.SHOPKINDS[sh.kind]), name: shopName(cfg, sh.kind, sh.x) }); }
     for (const p of area.spots || []) spots.push(Object.assign({ w: 24 }, p, { label: p.label || p.name }));
     return (streetCache[key] = { sc, W, len, spots, cross: sc.cross.map(i => i * 240) });
   }
+  // Real streets: building order, storefronts and furniture come from OpenStreetMap (js/cities/<city>-streets.js).
+  // Real shops are only drawn and labelled; ones whose type has a game interior can be entered (generic interior).
+  const SF = () => window.Storefront;
+  function realStreet(cfg, area, RD, key) {
+    const s = area.street || {}, spots = [], signs = [];
+    const as = area.spots || [];
+    for (const sh of SC.realLayout(RD)) {
+      const label = sh.n + (sh.zh ? ' · ' + sh.zh : ''), front = sh.front;
+      if (front && SF()) { const sb = SF().sign(sh, RD.id); if (sb.kind !== 'none') signs.push({ sh, sb, x: sh.x, door: SF().geom(sh, sb.st), text: SF().signText(sh, sb.st) }); }
+      if (as.some(p => Math.abs(p.x - sh.x) < 18)) continue;
+      if (sh.g && front) spots.push({ id: 'rs' + sh.osm, x: sh.x, w: Math.max(6, Math.min(12, sh.sw / 2)), k: 'shop', kind: sh.g, sx: sh.sx, sw: sh.sw, real: 1, label: '进去看看 · ' + label, name: sh.n });
+      else spots.push({ id: 'rs' + sh.osm, x: sh.x, w: Math.max(6, Math.min(10, (sh.sw || 12) / 2)), k: 'sign', real: front ? 1 : 2, label, text: sh.n + ' · ' + sh.zh + (front ? '（真实店铺，这里只画了店面）' : '（真实地点）') });
+    }
+    for (const p of as) spots.push(Object.assign({ w: 24 }, p, { label: p.label || p.name }));
+    const cr = RD.cross.filter(c => c.x != null && c.kind === 'street');
+    const sc = { id: key, real: RD, lane: s.lane || cfg.laneColor, tram: !!s.tram };
+    return { sc, real: RD, W: RD.W, len: RD.len, spots, signs, cross: cr.map(c => c.x), names: cr.map(c => c.name), fur: RD.fur.filter(f => f.side !== 'far' || f.k === 'tram') };
+  }
+  const furDraw = (R, f, x, sy, night) => { // TTC stop poles, subway entrances, Bike Share docks, public art (plain text, no logos)
+    if (f.k === 'tram') { R.rect(x, sy + 128, 2, 42, '#3a3a44'); R.rect(x - 5, sy + 120, 12, 9, '#d8343a'); R.rect(x - 4, sy + 124, 10, 1, '#fff'); }
+    else if (f.k === 'subway') { R.rect(x - 10, sy + 150, 20, 20, '#2a2a33'); R.rect(x - 8, sy + 154, 16, 16, '#14161e'); R.rect(x - 1, sy + 132, 2, 18, '#3a3a44'); R.rect(x - 9, sy + 124, 19, 9, '#c8102e'); R.text('TTC', x + 1, sy + 125, { al: 'c', c: '#fff', sh: false }); }
+    else if (f.k === 'bicycle_rental') { for (let k = 0; k < 4; k++) { const bx = x - 12 + k * 7; R.rect(bx, sy + 163, 5, 1, '#2e8a3e'); R.rect(bx, sy + 165, 2, 2, '#1a1a22'); R.rect(bx + 4, sy + 165, 2, 2, '#1a1a22'); R.rect(bx + 2, sy + 160, 1, 4, '#2e8a3e'); } R.rect(x - 14, sy + 167, 30, 2, '#5a5a66'); }
+    else if (f.k === 'artwork') { R.rect(x - 6, sy + 162, 12, 8, '#8a8a8a'); R.rect(x - 3, sy + 146, 6, 16, night ? '#5a5a60' : '#a8a0a8'); R.rect(x - 5, sy + 142, 10, 4, night ? '#5a5a60' : '#a8a0a8'); }
+  };
   function shopName(cfg, kind, x) { const L0 = (cfg.shopNames && cfg.shopNames[kind]) || [cfg.signs.shop[kind] || SC.SHOPKINDS[kind]]; return L0[(H(x, 7) * L0.length) | 0]; }
   K.street = street;
   const CAR_COLS = ['#d84a4a', '#e8e8ee', '#3a5ad8', '#2a2a30', '#8a8a96', '#5aa86a', '#e89a3a', '#7a3a5a'];
@@ -420,20 +467,34 @@
     draw(R, s, cfg) {
       const C = R.C, a = K.area(s, cfg), S = street(cfg, a), tod = K.tod(s), night = tod === 'night', t = R.t;
       const mid = (s.c[0][0] + s.c[1][0]) / 2, ox = clamp(mid - 240, 0, S.W - 480);
-      SC.drawView(R, 0, 0, 480, 200, K.view(cfg, a.view), { tod, weather: s.wea, t, pan: ox / Math.max(1, S.W - 480), off: { cars: 1, trains: 1, boats: 1, neon: s.off.neon, clouds: s.off.clouds, planes: s.off.planes, birds: s.off.birds } });
+      SC.drawView(R, 0, 0, 480, 200, K.view(cfg, a.view), { tod, weather: s.wea, t, street: 1, pan: ox / Math.max(1, S.W - 480), off: { cars: 1, trains: 1, boats: 1, neon: s.off.neon, clouds: s.off.clouds, planes: s.off.planes, birds: s.off.birds } });
       const i0 = Math.floor(ox / 240);
-      for (let i = i0; i <= i0 + 2 && i < S.len; i++) R.blit(SC.streetChunk(R, S.sc, i, tod), i * 240 - ox, 72);
+      for (let i = i0; i <= i0 + 2 && i < S.len; i++) { if (S.real) R.blit(SC.realChunk(R, S.sc, i, tod), i * 240 - ox, 0); else R.blit(SC.streetChunk(R, S.sc, i, tod), i * 240 - ox, 72); }
       const sy = 72; // chunk top on screen → sidewalk 232–244, road 246–272
       // lamps first so shop signs draw on top of the posts (no sign/lamp overlap)
       for (let wx = Math.floor(ox / 120) * 120 + 60; wx < ox + 520; wx += 120) { if (S.cross.some(X => wx > X - 6 && wx < X + SC.GAP + 6)) continue; const x = wx - ox; R.rect(x, sy + 112, 2, 58, '#2a2a33'); R.rect(x - 4, sy + 110, 10, 3, '#2a2a33'); R.rect(x - 3, sy + 113, 8, 2, night ? '#ffe9a8' : '#c8c8d0'); if (night) R.rect(x - 14, sy + 115, 30, 50, '#ffe9a8', .07); }
       // shop signs (local language) + custom facades
+      if (S.real) { for (const f of S.fur) { const x = f.x - ox; if (x < -30 || x > 510 || S.spots.some(q => !q.real && Math.abs(q.x - f.x) < (f.k === 'subway' ? 30 : 14))) continue; furDraw(R, f, x, sy, night); }
+        const near = (x0, x1) => [0, 1].some(i => s.c[i] && s.c[i][0] > x0 - 10 && s.c[i][0] < x1 + 10) || (s.b || []).some(q => q[0] > x0 - 4 && q[0] < x1 + 4);
+        for (const g of S.signs) { const st = g.sb.st, x0 = g.sb.x - ox; if (x0 < -80 || x0 > 500) continue;
+          // doors swing open when a cat walks up (a dark doorway + the open leaf)
+          const D = g.door; if (near(D.dx, D.dx + D.dw)) { const dx = D.dx - ox, top = st.awn && st.awn !== 'none' ? 202 : 198; R.rect(dx, top, D.dw, 232 - top, night ? st.glow : mix(st.in, '#000', .45)); R.rect(dx, top, 2, 232 - top, mix(st.dc || '#2a2a30', '#000', .2)); R.rect(dx + 2, top + 2, 1, 232 - top - 4, '#a8c4dc', .6); }
+          // wordmark: full name → short → tiny form, never a truncated '…' plate
+          const it = !!st.it; let fit = g.text.find(t => R.tw(t, 12, it) + (st.bold ? .5 : 0) <= g.sb.w - 2);
+          if (!fit) { fit = g.text.reduce((a, b) => R.tw(b) < R.tw(a) ? b : a); const ew = R.tw(fit, 12, it) + 4; R.rect(g.sb.x + g.sb.w / 2 - ox - ew / 2, g.sb.y, ew, g.sb.h, mix(st.band, '#000', night ? .2 : 0)); } // a sign that sticks out a little, never a '…' plate
+          const tc = st.tc || '#f4f0e6', tx = g.sb.x + g.sb.w / 2 - ox;
+          if (night) R.rect(tx - R.tw(fit, 12, it) / 2 - 1, g.sb.y + 1, R.tw(fit, 12, it) + 2, g.sb.h - 2, tc, .14); // lit signage
+          R.text(fit, tx, g.sb.y + (g.sb.h - 6) / 2 - .5, { al: 'c', c: night ? mix(tc, '#ffffff', .25) : tc, sh: false, b: st.bold, it }); } }
       for (const sp of S.spots) { const x = sp.x - ox; if (x < -80 || x > 560) continue;
-        if (sp.k === 'shop') { const nm = sp.name, nx = S.spots.reduce((m, q) => q.k === 'shop' && q.sx > sp.sx && q.sx < m ? q.sx : m, 1e9), w = Math.min(sp.sw - 4, R.tw(nm) + 6, nx - sp.sx - 3); R.rect(sp.sx + 2 - ox, sy + 113, w, 8, '#1a1a22'); let t = nm; while (t.length > 1 && R.tw(t) > w - 5) t = t.slice(0, -1); if (t !== nm) t = t.slice(0, -1) + '…'; R.text(t, sp.sx + 5 - ox, sy + 114, { c: night ? '#ffe9a8' : '#f4f0e6', sh: false }); }
+        if (sp.real === 1) continue;
+        if (sp.real === 2) { R.rect(x, sy + 146, 2, 24, '#3a3a44'); R.rect(x - 6, sy + 140, 14, 8, '#2a5a8a'); R.text('i', x + 1, sy + 140, { al: 'c', c: '#fff', sh: false }); continue; }
+        if (S.real && (sp.k === 'hotel' || sp.k === 'study')) { const nm = sp.name, w = R.tw(nm) + 8, lx = clamp(sp.x, w / 2 + 2, S.W - w / 2 - 2) - ox; R.rect(lx - w / 2, sy + 104, w, 9, '#1a1a22'); R.rect(lx - w / 2, sy + 112, w, 1, C.gold); R.text(nm, lx, sy + 105, { al: 'c', c: C.gold, sh: false }); if (sp.k === 'hotel') { R.rect(x - 16, sy + 118, 32, 4, '#c8a050'); R.rect(x - 15, sy + 122, 1, 48, '#8a7a5a'); R.rect(x + 14, sy + 122, 1, 48, '#8a7a5a'); } else { R.rect(x, sy + 130, 2, 40, '#3a3a44'); } continue; }
+        if (sp.k === 'shop') { const nm = sp.name, nx = S.spots.reduce((m, q) => q.k === 'shop' && q.sx > sp.sx && q.sx < m ? q.sx : m, 1e9), w = Math.min(sp.sw - 4, R.tw(nm) + 6, nx - sp.sx - 3); R.rect(sp.sx + 2 - ox, sy + 113, w, 8, '#1a1a22'); const t = [nm, nm.split(' ')[0]].find(q => R.tw(q) <= w - 5); if (t) R.text(t, sp.sx + 5 - ox, sy + 114, { c: night ? '#ffe9a8' : '#f4f0e6', sh: false }); }
         else facade(R, s, cfg, sp, x, sy, night, t);
       }
       // street furniture: lamps, trees, signals, street-name signs
       const fur = a.street || {};
-      if (fur.trees !== false) for (let wx = Math.floor(ox / 160) * 160 + 20; wx < ox + 520; wx += 160) { if (S.cross.some(X => wx > X - 14 && wx < X + SC.GAP + 14)) continue; const x = wx - ox, gc = s.wea === 'snow' ? '#e8eef4' : tod === 'golden' ? '#c8783a' : '#3a7a4a'; R.rect(x - 1, sy + 140, 3, 30, '#4a3424'); R.rect(x - 9, sy + 124, 19, 16, gc); R.rect(x - 6, sy + 120, 13, 4, gc); R.rect(x - 7, sy + 168, 15, 2, '#5a4a3a'); }
+      if (S.real ? fur.trees : fur.trees !== false) for (let wx = Math.floor(ox / 160) * 160 + 20; wx < ox + 520; wx += 160) { if (S.cross.some(X => wx > X - 14 && wx < X + SC.GAP + 14)) continue; const x = wx - ox, gc = s.wea === 'snow' ? '#e8eef4' : tod === 'golden' ? '#c8783a' : '#3a7a4a'; R.rect(x - 1, sy + 140, 3, 30, '#4a3424'); R.rect(x - 9, sy + 124, 19, 16, gc); R.rect(x - 6, sy + 120, 13, 4, gc); R.rect(x - 7, sy + 168, 15, 2, '#5a4a3a'); }
       S.cross.forEach((X, k) => { const x = X - ox; if (x < -60 || x > 520) return; const g = sig(s.t, k);
         // cross-street traffic during cross green
         if (g.cross !== 'r') for (let j = 0; j < 3; j++) { const yy = ((s.t * 30 + j * 23) % 70); const cy = sy + 118 + yy * .6, cw = 6 + yy * .14; R.rect(x + SC.GAP / 2 - (j % 2 ? cw + 2 : -2), cy, cw, cw * .6, CAR_COLS[(j * 3 + k) % 8]); }
@@ -443,10 +504,10 @@
           R.rect(px - 3, sy + 128, 8, 8, '#2a2a30'); if (g.ped === 'walk') { R.rect(px, sy + 129, 2, 2, '#f4f8ff'); R.rect(px - 1, sy + 131, 4, 3, '#f4f8ff'); } else if (g.ped === 'stop' || (t * 3 | 0) % 2) R.rect(px - 1, sy + 129, 4, 5, '#ff8a3a');
           if (g.ped !== 'stop' && g.cnt && cfg.countdown !== false) R.text(String(g.cnt), px + 1, sy + 137, { al: 'c', c: '#ff8a3a', sh: false });
         }
-        const nm = (fur.names || [])[k]; if (nm) { const w = R.tw(nm) + 6, ss = cfg.streetSign || { bg: '#1f5a3a', fg: '#ffffff' }; R.rect(x + 4, sy + 94, w, 9, ss.bg); R.rect(x + 4, sy + 94, w, 1, mix(ss.bg, '#fff', .3)); R.text(nm, x + 7, sy + 95, { c: ss.fg, sh: false }); }
+        const nm = (S.names || fur.names || [])[k]; if (nm) { const w = R.tw(nm) + 6, ss = cfg.streetSign || { bg: '#1f5a3a', fg: '#ffffff' }; R.rect(x + 4, sy + 94, w, 9, ss.bg); R.rect(x + 4, sy + 94, w, 1, mix(ss.bg, '#fff', .3)); R.text(nm, x + 7, sy + 95, { c: ss.fg, sh: false }); }
       });
-      // pedestrians (s.b) — simple pixel people, umbrellas when it rains
-      for (const p of s.b || []) { const x = p[0] - ox; if (x < -10 || x > 490) continue; person(R, x, sy + 169, p[2], p[1], p[3], s.wea, t); }
+      // passers-by (s.b) — NPC cats (everyone in this world is a cat), umbrellas when it rains
+      for (const p of s.b || []) { const x = p[0] - ox; if (x < -20 || x > 500) continue; NPC.draw(R, x, sy + 170, { look: p[2], dir: p[1], moving: p[3], role: p[2] % 23 === 5 ? 'police' : p[2] % 11 === 3 ? 'student' : 'walk', wea: s.wea, t }); }
       // cats
       if (!cuddleDraw(R, s, ox)) drawCatsWalk(R, s, ox);
       // traffic (s.cars) — skip a frame when a car wraps (no streak across the street)
@@ -454,20 +515,12 @@
       if (s.wea === 'rain') { R.rect(0, 244, 480, 28, '#8aa0c8', .08); }
       bubbles(R, s, S.spots, ox, 150);
       // mini progress bar of the street
-      R.rect(140, 18, 200, 3, C.ink2); R.rect(140 + mid / S.W * 200 - 2, 17, 5, 5, C.pink); for (const sp of S.spots) if (sp.k !== 'shop') R.rect(140 + sp.x / S.W * 200, 18, 1, 3, sp.k === 'station' ? C.blue : sp.k === 'act' ? C.gold : C.mint);
+      R.rect(140, 18, 200, 3, C.ink2); R.rect(140 + mid / S.W * 200 - 2, 17, 5, 5, C.gold); for (const sp of S.spots) if (sp.k !== 'shop' && !sp.real) R.rect(140 + sp.x / S.W * 200, 18, 1, 3, sp.k === 'station' ? C.blue : sp.k === 'act' ? C.gold : C.mint);
       R.text(a.local || '', 140, 23, { c: C.dim });
-      R.btn(4, 252, 42, 16, '地图', { k: 'map' }); R.btn(48, 252, 54, 16, '回酒店', { k: 'taxi' }); if (cfg.id === 'toronto') R.btn(104, 252, 54, 16, SC.REAL.on ? '实景 ✓' : '像素', () => SC.REAL.toggle(), { on: SC.REAL.on });
+      R.btn(4, 252, 42, 16, '地图', { k: 'map' }); R.btn(48, 252, 54, 16, '回酒店', { k: 'taxi' }); if (cfg.id === 'toronto') R.btn(104, 252, 54, 16, SC.REAL.on ? '实景像素' : '手绘像素', () => SC.REAL.toggle(), { on: SC.REAL.on });
       header(R, s, cfg, cfg.name + ' · ' + a.name); toast(R, s); fade(R, s);
     },
   };
-  function person(R, x, y, look, dir, moving, wea, t) {
-    const skin = ['#f0d0b0', '#c89a78', '#8a5a3a', '#e8c0a0'][look % 4], coat = ['#3a5a8a', '#8a3a4a', '#4a4a52', '#5a7a4a', '#c8a050', '#e8e4f0'][(look >> 2) % 6], hair = ['#2a2020', '#5a3a20', '#c8a060', '#888'][(look >> 4) % 4];
-    const b = moving ? Math.abs(Math.sin(t * 8 + look)) : 0, leg = moving ? ((t * 8 + look) | 0) % 2 : 0;
-    R.rect(x - 1 - leg, y - 6, 2, 6, '#2a2a33'); R.rect(x + 1 + leg - 1, y - 6, 2, 6, '#2a2a33');
-    R.rect(x - 3, y - 15 - b, 6, 10, coat); R.rect(x - 2, y - 20 - b, 5, 5, skin); R.rect(x - 2, y - 21 - b, 5, 2, hair); R.px(x + (dir > 0 ? 2 : -2), y - 18 - b, '#222');
-    if (look % 5 === 0) { R.rect(x + dir * 6, y - 4, 5, 3, '#a87a4a'); R.px(x + dir * 9, y - 5, '#a87a4a'); R.rect(x + dir * 3, y - 10, 1, 1, '#aa3'); } // walking a dog
-    if (wea === 'rain' && look % 3 !== 1) { const uc = ['#c84a5a', '#3a5ad8', '#2a2a30', '#e8c84a'][look % 4]; R.rect(x - 7, y - 27 - b, 14, 3, uc); R.rect(x - 5, y - 28 - b, 10, 1, uc); R.rect(x, y - 25 - b, 1, 8, '#333'); }
-  }
   function vehicle(R, x, y, dir, kind, col, night, cfg, t) {
     const len = carLen(kind);
     if (kind === 3) { // streetcar / LRV (Flexity-style articulated)
@@ -488,12 +541,18 @@
   // custom street facades: stations, hotels, libraries, activity boards, tram stops, signs
   function facade(R, s, cfg, sp, x, sy, night, t) {
     const C = R.C;
-    if (sp.k === 'station') { const ln = cfg.lines.find(l => l.id === sp.line) || { color: '#888' }; R.rect(x - 20, sy + 138, 40, 32, '#2a2a33'); R.rect(x - 22, sy + 134, 44, 5, ln.color); R.rect(x - 14, sy + 144, 28, 26, '#14161e'); for (let k = 0; k < 4; k++) R.rect(x - 12 + k * 4, sy + 160 + k * 2, 24 - k * 8 + 8, 1, '#3a3a44');
+    if (sp.k === 'station') { const ln = cfg.lines.find(l => l.id === sp.line) || { color: '#888' };
+      if (ln.short === '5') { // Crosstown (Line 5) entrance: glass pavilion with a white frame and a sloped roof plane (approximate, after Metrolinx renderings)
+        const gl = night ? '#ffe7b0' : '#a8c8d4'; R.rect(x - 22, sy + 132, 44, 3, '#f0f0ec'); R.rect(x - 22, sy + 130, 30, 2, '#f0f0ec'); R.rect(x - 21, sy + 135, 42, 35, gl, night ? .9 : .85);
+        for (let k = 0; k < 4; k++) R.rect(x - 9 + k * 6, sy + 152 + k * 4, 18 - k * 4, 1, night ? '#c8a060' : '#6a7a88'); // stairs down, seen through the glass
+        for (const cx of [-21, -7, 7, 20]) R.rect(x + cx, sy + 135, 1, 35, '#f4f4f0'); R.rect(x - 21, sy + 168, 42, 2, '#c8c8c4'); R.rect(x - 21, sy + 135, 42, 1, ln.color); if (!night) R.rect(x - 18, sy + 138, 6, 10, '#ffffff', .35);
+        const lb = sp.sign || sp.stn, w = R.tw(lb) + 8; R.rect(x - w / 2, sy + 122, w, 9, '#1a1a1e'); R.rect(x - w / 2, sy + 122, 2, 9, ln.color); R.text(lb, x + 1, sy + 123, { al: 'c', c: '#ffffff', sh: false }); R.rect(x + w / 2 + 2, sy + 122, 9, 9, ln.color); R.text('5', x + w / 2 + 6.5, sy + 123, { al: 'c', c: ln.text || '#111', sh: false }); return; }
+      R.rect(x - 20, sy + 138, 40, 32, '#2a2a33'); R.rect(x - 22, sy + 134, 44, 5, ln.color); R.rect(x - 14, sy + 144, 28, 26, '#14161e'); for (let k = 0; k < 4; k++) R.rect(x - 12 + k * 4, sy + 160 + k * 2, 24 - k * 8 + 8, 1, '#3a3a44');
       const lb = sp.sign || sp.stn; const w = R.tw(lb) + 8; R.rect(x - w / 2, sy + 124, w, 10, '#14161e'); R.rect(x - w / 2, sy + 124, 3, 10, ln.color); R.text(lb, x + 1, sy + 125, { al: 'c', c: '#ffffff', sh: false }); if (ln.short) { R.rect(x + w / 2 + 2, sy + 124, 10, 10, ln.color); R.text(ln.short, x + w / 2 + 7, sy + 125, { al: 'c', c: ln.text || '#111', sh: false }); } }
     else if (sp.k === 'tram') { const ln = cfg.lines.find(l => l.id === sp.line) || { color: '#c8344a', name: '' }; R.rect(x, sy + 132, 2, 38, '#3a3a44'); R.rect(x - 6, sy + 124, 14, 10, ln.color); R.text(ln.short || '', x + 1, sy + 125, { al: 'c', c: '#fff', sh: false }); R.rect(x + 6, sy + 150, 20, 2, '#5a5a66'); R.rect(x + 8, sy + 152, 1, 18, '#5a5a66'); R.rect(x + 24, sy + 152, 1, 18, '#5a5a66'); }
     else if (sp.k === 'hotel') { const w = sp.fw || 80; R.rect(x - w / 2, sy + 20, w, 140, sp.color || '#3a3a4e'); for (let yy = sy + 28; yy < sy + 116; yy += 10) for (let xx = x - w / 2 + 6; xx < x + w / 2 - 6; xx += 10) R.rect(xx, yy, 6, 6, night ? (H(xx, yy) < .5 ? '#ffe9a8' : '#1a2240') : '#9ab8d8'); R.rect(x - w / 2 - 4, sy + 120, w + 8, 6, '#c8a050'); R.text(sp.name, x, sy + 112, { al: 'c', c: C.gold }); R.rect(x - 12, sy + 132, 24, 38, '#9ab8d8'); R.rect(x - .5, sy + 132, 1, 38, '#c8a050'); }
     else if (sp.k === 'study') { const w = sp.fw || 70; R.rect(x - w / 2, sy + 70, w, 90, sp.color || '#8a7a6a'); R.tri && 0; for (let k = 0; k < 5; k++) R.rect(x - w / 2 + 6 + k * (w - 12) / 4, sy + 96, 4, 64, mix(sp.color || '#8a7a6a', '#fff', .3)); R.rect(x - w / 2 - 3, sy + 88, w + 6, 8, mix(sp.color || '#8a7a6a', '#fff', .2)); R.text(sp.name, x, sy + 78, { al: 'c', c: C.cream }); R.rect(x - 8, sy + 140, 16, 30, '#3a2a20'); }
-    else if (sp.k === 'act') { R.rect(x - 9, sy + 146, 18, 16, '#f4ecd8'); R.rect(x - 10, sy + 145, 20, 2, '#6a4a30'); R.rect(x - 8, sy + 162, 2, 8, '#6a4a30'); R.rect(x + 6, sy + 162, 2, 8, '#6a4a30'); R.text(sp.icon || '★', x, sy + 149, { al: 'c', c: '#c84a4a', sh: false }); if ((t * 2 | 0) % 2) R.text('!', x, sy + 136, { al: 'c', c: C.gold }); }
+    else if (sp.k === 'act') { R.rect(x - 9, sy + 146, 18, 16, '#f4ecd8'); R.rect(x - 10, sy + 145, 20, 2, '#6a4a30'); R.rect(x - 8, sy + 162, 2, 8, '#6a4a30'); R.rect(x + 6, sy + 162, 2, 8, '#6a4a30'); if (K.icon) K.icon(R, sp.icon || 'star', x, sy + 154, 2); else R.text('★', x, sy + 149, { al: 'c', c: '#c84a4a', sh: false }); if ((t * 2 | 0) % 2) R.text('!', x, sy + 136, { al: 'c', c: C.gold }); }
     else if (sp.k === 'sign') { R.rect(x, sy + 140, 2, 30, '#3a3a44'); R.rect(x - 10, sy + 132, 22, 10, sp.color || '#2a5a8a'); R.text('i', x + 1, sy + 133, { al: 'c', c: '#fff', sh: false }); }
     else if (sp.k === 'go') { R.rect(x - 1, sy + 136, 2, 34, '#3a3a44'); R.rect(x - 16, sy + 130, 32, 9, '#1f5a3a'); R.text((sp.dir < 0 ? '◀ ' : '') + (sp.short || sp.label) + (sp.dir > 0 ? ' ▶' : ''), x, sy + 131, { al: 'c', c: '#fff', sh: false }); }
     else if (sp.k === 'cuddle') { R.rect(x - 16, sy + 158, 32, 4, '#6a4a30'); R.rect(x - 16, sy + 150, 32, 3, '#6a4a30'); R.rect(x - 14, sy + 162, 2, 8, '#2a2a33'); R.rect(x + 12, sy + 162, 2, 8, '#2a2a33'); }
@@ -524,10 +583,12 @@
       R.rect(14, 104, 30, 96, '#e8e0d0'); R.rect(16, 106, 26, 94, '#5a3a2a');
       // shelves full of goods
       const goods = (lib || kind === 'books') ? 4 : 3;
-      for (let r = 0; r < goods; r++) { const y = 70 + r * 32; R.rect(200, y, lib ? 270 : 110, 3, '#6a4a30'); for (let i = 0; i < (lib ? 52 : 20); i++) { const bh = lib || kind === 'books' ? 14 + (H(i, r) * 8 | 0) : 8 + (H(i, r) * 6 | 0); R.rect(202 + i * 5, y - bh, 4, bh, ['#c86a7a', '#5a8ac8', '#f3c55e', '#8fe0b0', '#9a7aaa', '#e8e4f0', '#c87a3a'][(i * 3 + r) % 7]); } }
-      if (!lib) { R.rect(300, 206, 110, 36, '#6a4030'); R.rect(300, 204, 110, 3, '#e8d0a0'); R.rect(380, 186, 18, 18, '#2a2a33'); R.rect(382, 188, 14, 10, '#5af08a'); R.rect(336, 180, 12, 12, '#e8c8a0'); R.rect(334, 192, 16, 14, '#3a5a5a'); R.px(339, 184, '#222'); R.px(344, 184, '#222'); }
+      for (let r = 0; r < goods; r++) { const y = 70 + r * 32; R.rect(200, y, lib ? 270 : 110, 3, '#6a4a30'); for (let i = 0; i < (lib ? 52 : 20); i++) { const bh = lib || kind === 'books' ? 14 + (H(i, r) * 8 | 0) : 8 + (H(i, r) * 6 | 0); R.rect(202 + i * 5, y - bh, 4, bh, ['#b8704a', '#5a8ac8', '#f3c55e', '#8fe0b0', '#9a7aaa', '#e8e4f0', '#c87a3a'][(i * 3 + r) % 7]); } }
+      if (!lib) { R.rect(300, 206, 110, 36, '#6a4030'); R.rect(300, 204, 110, 3, '#e8d0a0'); R.rect(380, 186, 18, 18, '#2a2a33'); R.rect(382, 188, 14, 10, '#5af08a'); }
       else { for (const tx of [250, 380]) { R.rect(tx, 216, 70, 4, '#8a6040'); R.rect(tx + 4, 220, 3, 22, '#6a4a30'); R.rect(tx + 63, 220, 3, 22, '#6a4a30'); SC.F.lamp(R, tx + 35, 216, true, R.t); } }
       if (kind === 'cafe' || kind === 'tea' || kind === 'bakery' || lib) { R.rect(150, 222, 40, 4, '#8a6040'); R.rect(168, 226, 4, 16, '#6a4a30'); R.rect(150, 214, 8, 8, '#f4f0e6'); R.rect(176, 216, 6, 6, '#f4f0e6'); if (kind === 'cafe') { R.rect(310, 168, 20, 18, '#a8a8b4'); R.rect(352, 150, 50, 24, '#1a1a22'); R.text('MENU', 377, 152, { al: 'c', c: '#f4f0e6', sh: false }); } }
+      if (!lib) { const role = { cafe: 'barista', tea: 'barista', bakery: 'chef', ramen: 'chef', books: 'librarian', bar: 'concierge', bank: 'clerk', flowers: 'vendor', grocery: 'vendor', conv: 'clerk', gift: 'clerk', game: 'student' }[kind] || 'clerk'; NPC.draw(R, 342, 206, { look: (kind.length * 7) | 0, role, sit: 1, dir: -1, t: R.t }); R.rect(300, 206, 110, 36, '#6a4030'); R.rect(300, 204, 110, 3, '#e8d0a0'); }
+      else NPC.draw(R, 285, 214, { look: 12, breed: 4, role: 'librarian', sit: 1, dir: -1, t: R.t });
       const nm = s.arg.name || ''; const w = R.tw(nm) + 14; R.rect(240 - w / 2, 18, w, 14, '#1a1a22'); R.text(nm, 240, 22, { al: 'c', c: C.cream });
       if (!cuddleDraw(R, s, 0)) drawCatsWalk(R, s, 0);
       bubbles(R, s, SCN.shop.spots(s, cfg), 0, 160);
@@ -548,7 +609,7 @@
       for (const r of m.roads || []) { for (let k = 0; k < r.length - 1; k++) { const [x0, y0] = r[k], [x1, y1] = r[k + 1]; const n = Math.max(Math.abs(sx(x1) - sx(x0)), Math.abs(sy(y1) - sy(y0))) | 0; for (let q = 0; q <= n; q++) R.rect(sx(x0) + (sx(x1) - sx(x0)) * q / (n || 1), sy(y0) + (sy(y1) - sy(y0)) * q / (n || 1), 1, 1, '#ffffff'); } }
       for (const ln of cfg.lines) { const pts = (m.lines || {})[ln.id]; if (!pts) continue; for (let k = 0; k < pts.length - 1; k++) { const [x0, y0] = pts[k], [x1, y1] = pts[k + 1]; const n = Math.max(Math.abs(sx(x1) - sx(x0)), Math.abs(sy(y1) - sy(y0))) | 0; for (let q = 0; q <= n; q++) R.rect(sx(x0) + (sx(x1) - sx(x0)) * q / (n || 1) - 1, sy(y0) + (sy(y1) - sy(y0)) * q / (n || 1) - 1, 2, 2, ln.color); } for (const p of pts) if (p[2]) { R.rect(sx(p[0]) - 1, sy(p[1]) - 1, 3, 3, '#fff'); R.text(p[2], sx(p[0]) + 3, sy(p[1]) - 3, { c: '#2a2a33', sh: false }); } }
       for (const l of m.labels || []) R.text(l[2], sx(l[0]), sy(l[1]), { c: l[3] || '#5a5a6a', sh: false });
-      for (const a of cfg.areas) { const p = (m.areas || {})[a.id]; if (!p) continue; const here = s.area === a.id; R.btn(sx(p[0]) - 30, sy(p[1]) - 7, 60, 13, a.name, { k: 'goArea', id: a.id }, { c: here ? '#7a3a52' : '#3a4a6a' }); }
+      for (const a of cfg.areas) { const p = (m.areas || {})[a.id]; if (!p) continue; const here = s.area === a.id; R.btn(sx(p[0]) - 30, sy(p[1]) - 7, 60, 13, a.name, { k: 'goArea', id: a.id }, { c: here ? '#7a4a2a' : '#3a4a6a' }); }
       const h = K.hotel(s, cfg), hp = h && (m.areas || {})[h.area]; if (hp) R.text('🏨', sx(hp[0]) + 26, sy(hp[1]) - 14, {});
       // legend + routes
       R.panel(314, 18, 160, 246, { title: cfg.name + ' 交通' });
@@ -577,8 +638,8 @@
 
   // ---------------- the mode ----------------
   Hub.mode('travel', {
-    music(s) { if (s.cud) return 'cuddle'; if (s.sc === 'room' || s.sc === 'lobby' || s.sc === 'hall') return 'hotel'; if (s.sc === 'shop') return s.arg && s.arg.kind === 'library' ? 'study' : 'hotel'; return 'travel'; },
-    pad(s) { return ['street', 'lobby', 'hall', 'room', 'shop', 'station', 'ride'].includes(s.sc) || (s.sc === 'act' && s.act && s.act.pad); },
+    music(s) { if (s.cud) return 'cuddle'; if (['room', 'lobby', 'hall', 'entry', 'bath', 'balcony'].includes(s.sc)) return 'hotel'; if (s.sc === 'shop') return s.arg && s.arg.kind === 'library' ? 'study' : 'hotel'; return 'travel'; },
+    pad(s) { return ['street', 'lobby', 'hall', 'room', 'entry', 'bath', 'balcony', 'shop', 'station', 'ride'].includes(s.sc) || (s.sc === 'act' && s.act && s.act.pad); },
     create(arg) {
       const st = { sc: 'pick', city: null, hotel: null, area: null, arg: {}, day: 1, clock: 16, auto: true, wea: 'clear', off: {}, cur: 0.9, tvOn: 0, inn: 0, c: [[200, FLOOR], [230, FLOOR]], f: [1, -1], mv: [0, 0], pw: 0, cud: null, ask: null, msg: null, t: 0, cars: [], peds: [], tram: null, prompt: null, panel: 0, pin: [{}, {}], fi: 0, coins: Wallet.coins, ride: null, act: null };
       if (arg.city && Cities.get(arg.city)) { st.city = arg.city; st.sc = 'hotels'; }
@@ -660,8 +721,8 @@
       const S = SCN[s.sc]; if (!S) return;
       S.draw(R, s, cfg, dt);
       // touch helpers: paws / cuddle button
-      if (['street', 'lobby', 'hall', 'room', 'shop', 'ride'].includes(s.sc) && !s.cud && s.c[0] && s.c[1]) { const near = Math.abs(s.c[0][0] - s.c[1][0]) < 40; if (near || s.pw) R.btn(AWm - 64, 252, 42, 16, s.pw ? '松爪' : '牵爪/窝', { k: 'cuddleBtn' }, { c: '#6a3a5a' }); }
-      if (s.ask) { const c = s.c[s.ask.who]; if (c) { const ox = s.sc === 'street' ? clamp((s.c[0][0] + s.c[1][0]) / 2 - 240, 0, street(cfg, K.area(s, cfg)).W - 480) : ['lobby', 'hall'].includes(s.sc) ? clamp((s.c[0][0] + s.c[1][0]) / 2 - 240, 0, (s.sc === 'lobby' ? LOBBY_W : HALL_W) - 480) : 0; R.text(s.ask.k === 'paws' ? '🐾?' : '💤?', c[0] - ox, c[1] - 44 + Math.sin(R.t * 6), { al: 'c', c: R.C.pink }); } }
+      if (['street', 'lobby', 'hall', 'room', 'entry', 'bath', 'balcony', 'shop', 'ride'].includes(s.sc) && !s.cud && s.c[0] && s.c[1]) { const near = Math.abs(s.c[0][0] - s.c[1][0]) < 40; if (near || s.pw) R.btn(AWm - 64, 252, 42, 16, s.pw ? '松爪' : '牵爪/窝', { k: 'cuddleBtn' }, { c: '#6a3a5a' }); }
+      if (s.ask) { const c = s.c[s.ask.who]; if (c) { const ox = s.sc === 'street' ? clamp((s.c[0][0] + s.c[1][0]) / 2 - 240, 0, street(cfg, K.area(s, cfg)).W - 480) : S.w ? clamp((s.c[0][0] + s.c[1][0]) / 2 - 240, 0, Math.max(0, S.w(s, cfg) - 480)) : 0; R.text(s.ask.k === 'paws' ? '🐾?' : '💤?', c[0] - ox, c[1] - 44 + Math.sin(R.t * 6), { al: 'c', c: R.C.warm }); } }
       promptDraw(R, s);
     },
   });

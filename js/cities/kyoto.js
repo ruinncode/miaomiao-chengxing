@@ -28,7 +28,7 @@ Cities.quick({
       street: { len: 6, cross: [3], names: ['錦小路通'], label: '四条通', styles: ['old', 'brick'], shops: ['tea', 'books', 'gift', 'flowers', 'bakery'] } },
     { id: 'gion', name: '祇园 · 东山', view: 'gion', start: 300, bench: 1320, benchName: '石板路长椅',
       street: { len: 7, cars: false, cross: [2], names: ['花見小路'], label: '八坂通', styles: ['machiya', 'machiya', 'machiya', 'old'], hMax: 64, road: '#8a8478', walk: '#8a8070', shops: ['tea', 'gift', 'tea', 'flowers', 'gift'], trees: true },
-      sign: [1200, '祇园：请不要拍摄或打扰行人和舞伎，安静地走过石板路。'] },
+      sign: [1200, '祇园：请不要拍摄或打扰行猫和舞伎，安静地走过石板路。'] },
   ],
   lines: [
     { id: 'k', name: '京都市营地铁 乌丸线', short: 'K', color: '#2a9a5a', body: '#e8ece8', car: 'subway',

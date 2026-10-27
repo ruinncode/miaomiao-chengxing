@@ -20,7 +20,7 @@ Cities.quick({
     fuji: { id: 'tk-fuji', horizon: .7, mountains: true, ground: '#6a8a4a', plane: false, near: false, skyline: { far: { hMax: 18, hMin: 6, n: 6, kinds: ['old'] }, mid: { hMax: 22, hMin: 8, n: 5, gap: 60, kinds: ['old', 'condo'] } }, movers: [{ k: 'birds', y: .3 }] },
   },
   hotels: [
-    { id: 'capsule', name: '涩谷胶囊旅馆', area: 'shibuya', x: 900, room: 'capsule', roomName: '双人胶囊舱', view: 'shibuya', bed: 'capsule', floor: 6, tip: '体验',
+    { id: 'capsule', name: '涩谷胶囊旅馆', area: 'shibuya', x: 900, room: 'capsule', roomName: '双猫胶囊舱', view: 'shibuya', bed: 'capsule', floor: 6, tip: '体验',
       desc: '小小的胶囊舱，帘子一拉就是两只猫的秘密基地。窗外是涩谷的霓虹和山手线。', lobby: { wall: '#2a2a3a', uniform: '#1a1a2a' }, hall: { wall: '#3a3a4a', carpet: '#2a2a3a', door: '#c8c8d0' } },
     { id: 'ryokan', name: '浅草和风旅馆', area: 'asakusa', x: 1100, room: 'ryokan', roomName: '榻榻米和室', view: 'asakusa', bed: 'futon', floor: 3, tip: '推荐',
       desc: '榻榻米、障子门和地上的被褥；推开窗就是隅田川和晴空塔。', lobby: { wall: '#c8b08a', uniform: '#5a2a2a' }, hall: { wall: '#b89a74', carpet: '#6a4a3a', door: '#e8dcc4' }, rug: '#8a9a5a' },
@@ -30,7 +30,7 @@ Cities.quick({
   areas: [
     { id: 'shibuya', name: '涩谷', view: 'shibuya', start: 500, bench: 1500, benchName: '忠犬像旁的长椅',
       street: { len: 8, tram: false, cross: [2, 5], names: ['道玄坂', '公園通り'], label: '渋谷スクランブル交差点', styles: ['glass', 'condo'], shops: ['conv', 'ramen', 'cafe', 'game', 'books', 'tea'] },
-      sign: [1020, '涩谷十字路口：每次绿灯可能有上千人同时过马路，还是左侧通行。'] },
+      sign: [1020, '涩谷十字路口：每次绿灯可能有上千只猫同时过马路，还是左侧通行。'] },
     { id: 'marunouchi', name: '东京站 · 丸之内', view: 'marunouchi', start: 600,
       street: { len: 8, tram: false, cross: [3], names: ['行幸通り'], label: '丸の内', styles: ['old', 'glass', 'glass'], shops: ['cafe', 'gift', 'bakery', 'books', 'conv'], trees: true },
       lib: [1500, '丸之内书店咖啡角', 'cafe'] },
@@ -53,7 +53,7 @@ Cities.quick({
   ],
   acts: [
     { id: 'scramble', name: '涩谷十字路口', area: 'shibuya', x: 1200, icon: 'star', kind: 'collect', tod: 'night', time: 40,
-      intro: '绿灯亮了！在人潮里穿过十字路口，收集掉落的星星和硬币，别撞上低头看手机的路人。', real: '涩谷站前的 Scramble Crossing，世界上最繁忙的路口之一。',
+      intro: '绿灯亮了！在猫潮里穿过十字路口，收集掉落的星星和硬币，别撞上低头看手机的路猫。', real: '涩谷站前的 Scramble Crossing，世界上最繁忙的路口之一。',
       cfg: { items: ['star', 'coin'], max: 6, hazards: 3, hazard: 'book', hazSpeed: 55, ground: '#3a3a44' } },
     { id: 'sushi', name: '回转寿司', area: 'shibuya', x: 1700, icon: 'fish', kind: 'order', tod: 'night',
       intro: '寿司在传送带上转圈！照着清单一起拿：三文鱼、玉子、金枪鱼……拿错了要等下一圈。', real: '回转寿司（kaiten-zushi）起源于 1958 年的大阪。',

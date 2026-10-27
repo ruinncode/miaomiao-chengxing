@@ -8,7 +8,7 @@
 (function () {
   const DT = 1 / 60;
   const MG = () => window.MiniGames || [];
-  const SHELLS = ['#f6b8c8', '#a8d8c8', '#c8b8f0'];
+  const SHELLS = ['#d8d4c8', '#a8d8c8', '#f0c870']; // console grey, mint, sunny yellow (no pink)
   const M = {
     music: () => 'menu',
     create(arg) { return { sc: 'handheld', sel: 0, lv: 0, t: 0, pin: [{}, {}], place: arg.place || '', tv: !!arg.tv, shell: 0, boot: 1.2 }; },
@@ -56,12 +56,12 @@
       const dx = 160, dy = 206; R.rect(dx - 6, dy - 18, 12, 36, '#2a2030'); R.rect(dx - 18, dy - 6, 36, 12, '#2a2030');
       R.btn(dx - 20, dy - 7, 14, 14, '◀', { k: 'mv', v: -1 }, { c: '#2a2030' }); R.btn(dx + 6, dy - 7, 14, 14, '▶', { k: 'mv', v: 1 }, { c: '#2a2030' });
       R.btn(dx - 7, dy + 6, 14, 14, '▼', { k: 'lv', v: 1 }, { c: '#2a2030' });
-      R.btn(300, 190, 26, 26, 'A', { k: 'start' }, { c: '#c8566a' }); R.btn(272, 210, 26, 26, 'B', { k: 'back' }, { c: '#7a5a8a' });
+      R.btn(300, 190, 26, 26, 'A', { k: 'start' }, { c: '#b8643a' }); R.btn(272, 210, 26, 26, 'B', { k: 'back' }, { c: '#3a6a8a' });
       R.btn(206, 236, 30, 8, '', { k: 'shell' }, { c: '#6a5a6a' }); R.btn(244, 236, 30, 8, '', { k: 'start' }, { c: '#6a5a6a' });
       R.text('换色   START', 240, 246, { al: 'c', c: '#5a4a5a', sh: false });
       for (let i = 0; i < 4; i++) R.rect(330 + i * 6, 236 - i * 3, 3, 14, '#000', .18);
       // the two cats holding it
-      R.pair({}, [{ x: 70, y: 252, pose: 'sit', flip: false }, { x: 410, y: 252, pose: 'sit', flip: true }]);
+      R.pair({}, [{ x: 70, y: 252, pose: 'play', flip: false }, { x: 410, y: 252, pose: 'play', flip: true }]);
       R.text(s.tv ? '📺 连在酒店电视上' : '两只猫都能按 ← → ↑', 240, 14 + 4, { al: 'c', c: C.dim });
       R.topBar('掌机' + (s.place ? ' · ' + s.place : ''));
     },

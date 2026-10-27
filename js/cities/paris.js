@@ -45,7 +45,7 @@ Cities.quick({
     ['从香榭丽舍到卢浮宫', '1 号线从戴高乐星形广场坐到王宫-卢浮宫。', [['m1', 'Charles de Gaulle–Étoile', 'Palais Royal–Musée du Louvre']]],
   ],
   acts: [
-    { id: 'picnic', name: '铁塔下野餐', area: 'eiffel', x: 600, icon: 'apple', kind: 'order', tod: 'golden', intro: '在战神广场铺好野餐布！照着清单从篮子里拿：法棍、奶酪、草莓……', real: '战神广场（Champ de Mars）是铁塔前的大草坪，天气好时很多人在这里野餐。',
+    { id: 'picnic', name: '铁塔下野餐', area: 'eiffel', x: 600, icon: 'apple', kind: 'order', tod: 'golden', intro: '在战神广场铺好野餐布！照着清单从篮子里拿：法棍、奶酪、草莓……', real: '战神广场（Champ de Mars）是铁塔前的大草坪，天气好时很多猫在这里野餐。',
       cfg: { listTitle: '野餐篮', n: 5, pool: [['法棍', 'star'], ['奶酪', 'coin'], ['草莓', 'apple'], ['可颂', 'star'], ['柠檬水', 'cup'], ['马卡龙', 'flower']] } },
     { id: 'sparkle', name: '铁塔闪灯合影', area: 'eiffel', x: 1600, icon: 'star', kind: 'photo', tod: 'night', intro: '整点到了，铁塔开始闪！让铁塔进框，两只猫靠在一起按 ↑。', real: '夜里铁塔的闪灯每个整点持续约 5 分钟。', cfg: { target: .5, lmName: '埃菲尔铁塔', n: 4 } },
     { id: 'seine', name: '塞纳河划船', area: 'louvre', x: 1100, icon: 'ticket', kind: 'paddle', tod: 'golden', time: 50, intro: '一起划小船过塞纳河，节奏一致就越划越快。', real: '塞纳河两岸从 1991 年起被列为联合国世界遗产。', cfg: { goal: 650, vmax: 80, boatColor: '#2a4a7a' } },

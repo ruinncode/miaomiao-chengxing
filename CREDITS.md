@@ -1,10 +1,14 @@
 # CREDITS
 
-## Real-photo Toronto mode（实景照片模式）
+## Toronto streets: OpenStreetMap data
 
-Opt-in per device: the 「像素 / 实景 ✓」 button on any Toronto street, or 「窗外风景设置 → 窗外：实景照片」 in a Toronto hotel room (saved in `localStorage.mm_real`). Off by default; the pixel-art views are always the fallback while a photo is loading.
+Street layouts in Toronto's 实景像素 (real-pixel) mode come from **© OpenStreetMap contributors**, licensed under the [Open Database License (ODbL)](https://www.openstreetmap.org/copyright). That covers street direction and length, the order, width and storeys of buildings, shop and place names, TTC stops and subway entrances, Bike Share docks, artworks and cross streets. The data was fetched once through the Overpass API on 2026-10-27, and `tools/build_streets.py` turned it into `js/cities/toronto-streets.js` (a Produced Work, with the data shared under ODbL). Any value that is a guess, such as an untagged colour, assumed storeys, a hand-traced street axis or a renamed building, is marked `approximate` in that file. Shops are drawn as plain storefronts with their names in text; no logos are used. Hotel rooms, the interview company and any 短租公寓 interiors are fictional and set inside real buildings.
 
-All photos come from **Wikimedia Commons** under the licence shown (checked against the Commons API `extmetadata` on 2026-10-27). Changes: downscaled to 1600 px wide and re-encoded as WebP (`assets/photos/toronto/*.webp`, 145–460 KB each); in-game they are cropped/panned to fit the view and tinted for time of day/weather. Derivatives of CC BY-SA photos are shared under the same licence.
+## Real-pixel Toronto views（实景像素）
+
+On by default for Toronto. The 「实景像素 / 手绘像素」 button on a street, or the window setting in a hotel room, switches between them, and the choice is saved in `localStorage.mm_real`. The drawn pixel view is shown while the images load (lazy-loaded) and whenever 手绘像素 is chosen.
+
+All photos come from **Wikimedia Commons** under the licences shown, checked against the Commons API `extmetadata` on 2026-10-27. `tools/pixelate_photos.py` changes them in these ways: crop (the Distillery crop also removes the only visitors in any photo), downscale to 320×180, colour-grade into day / dusk / night variants (night adds generated window lights and stars), darken edges, Bayer-dither onto a 28-colour palette, and split into sky and city parallax layers. The output is PNG-8 in `assets/photos/toronto/px/` (about 300 KB for all 30 files). The downscaled sources are kept in `tools/photo_src/`, which is not deployed. Derivatives of CC BY-SA photos are shared under the same licence, and the CC BY 2.0 photo's derivative under CC BY 2.0. The in-game 致谢 · Credits screen on the title page lists the same attributions.
 
 | File | Used for | Author | Licence | Source |
 |---|---|---|---|---|
@@ -22,4 +26,10 @@ Not used, by design: Google Street View / Google Maps imagery (no scraping; a Ma
 - Font: Zpix (最像素) by SolidZORO, https://github.com/SolidZORO/zpix-pixel-font — check its licence terms before any commercial use.
 - Music: original lo-fi patterns generated in `js/audio.js` (no copyrighted music). "自己的音乐" plays a file you pick locally via `Sfx.useFile`; nothing is uploaded. (There is no MIDI import.)
 - Libraries: Phaser 3 (MIT), PeerJS (MIT).
-- Real-world place names, lines and stations are used for flavour; shops, cafés and hotels are fictional.
+- Real-world place names, lines and stations are used for flavour. In Toronto the shops are the real ones from OSM (see above); in the other cities the shops, cafés and hotels are fictional.
+
+## Storefronts (Toronto)
+- Every storefront look (js/cities/toronto-shops.js, drawn by js/hub/storefront.js) is hand-drawn pixel art. It is **approximate**: it is based on OSM tags (shop kind, brand), general brand colours and public Wikimedia Commons photos of the streets (for example Category:Distillery District and Mill Street). No logos or brand artwork are copied; signs are plain-text wordmarks.
+- Westin Harbour Castle podium/tower and Union Station colonnade: approximate, drawn from public photos and the heritage descriptions.
+- Eglinton Line 5 entrance pavilion: approximate, drawn after public Metrolinx/Crosstown renderings and photos.
+- Shop positions follow OSM (© OpenStreetMap contributors, ODbL); some are nudged along the street so the signs fit, so they are approximate.

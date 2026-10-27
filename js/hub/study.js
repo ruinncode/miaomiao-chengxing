@@ -10,7 +10,7 @@
   const UNLOCKS = [[30, '小仙人掌', 'cactus'], [90, '猫咪马克杯', 'mug'], [180, '暖光台灯', 'lamp'], [300, '小鱼缸', 'tank'], [600, '星星灯串', 'lights'], [1000, '金色书架', 'gold']];
   const TICK = [['喵指数', 3120.5], ['FISH', 42.1], ['YARN', 8.73], ['TUNA', 117.2], ['MEOW', 66.6], ['NAP', 12.4], ['CATNIP', 3.05], ['PAW', 250.9]];
   const BOOKS = ['CFA一级', '估值', '会计', '期权', '固收', '金融学', '公司理财', '计量', 'Excel', '面试'];
-  const DEFAULT_VIEW = { id: 'home', horizon: .7, skyline: { hMax: 64, seed: 5, center: .45 }, landmarks: [{ k: 'clocktower', x: .3 }], movers: [{ k: 'tram', y: 2, color: '#e8e4f0', stripe: '#c86a7a', speed: 30, period: 24 }, { k: 'birds', n: 4 }] };
+  const DEFAULT_VIEW = { id: 'home', horizon: .7, skyline: { hMax: 64, seed: 5, center: .45 }, landmarks: [{ k: 'clocktower', x: .3 }], movers: [{ k: 'tram', y: 2, color: '#e8e4f0', stripe: '#b8704a', speed: 30, period: 24 }, { k: 'birds', n: 4 }] };
 
   // ---------------- per-device stats ----------------
   const day = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -81,7 +81,7 @@
       const rm = Scenery.roomBack(R, s.room);
       const W = rm.win;
       Scenery.drawView(R, W.x, W.y, W.w, W.h, s.view, { tod, weather: wea, t, pan: 0.5 + Math.sin(t * 0.05) * 0.1 });
-      if (Stats.has('lights')) for (let i = 0; i < 16; i++) { R.rect(W.x + i * W.w / 15, W.y + 2 + Math.sin(i) * 2, 2, 2, ['#ffd25a', '#ff8fb8', '#8fd0f6'][i % 3]); }
+      if (Stats.has('lights')) for (let i = 0; i < 16; i++) { R.rect(W.x + i * W.w / 15, W.y + 2 + Math.sin(i) * 2, 2, 2, ['#ffd25a', '#f3a85e', '#8fd0f6'][i % 3]); }
       Scenery.windowFrame(R, W.x, W.y, W.w, W.h, { style: W.style, curtains: true, curtainC: rm.curtain || '#7a6aa8', t, weather: wea, open: 0.9 });
       // dim the room at night, warm lamp pool
       if (s.night) { R.rect(0, 0, R.AW, R.AH, '#0a0d20', 0.35); }
@@ -89,7 +89,7 @@
       const gold = Stats.has('gold');
       for (const [yy, off] of [[150, 0], [176, 5]]) { R.rect(16, yy, 104, 3, gold ? '#c8a050' : '#6a4a30'); for (let i = 0; i < 9; i++) { const bx = 18 + i * 11, bh = 16 + (Scenery.hash(i, yy) * 6 | 0), c = ['#2a4a7a', '#7a2a3a', '#2a5a4a', '#5a4a2a', '#4a3a6a'][(i + off) % 5]; R.rect(bx, yy - bh, 10, bh, c); R.rect(bx + 1, yy - bh + 3, 8, 1, '#e8d8a8'); } }
       const st0 = Stats.load(); const pots = Math.min(5, 1 + Math.floor(st0.total / 40));
-      for (let i = 0; i < pots; i++) { const px = 22 + i * 20, gh = Math.min(14, 3 + Math.floor((st0.total - i * 40) / 15)); R.rect(px, 190, 10, 7, '#b86a4a'); for (let j = 0; j < gh; j++) R.rect(px + 4 + Math.round(Math.sin(j * .8 + i) * 1.5), 190 - j, 2, 1, '#5aa86a'); if (gh > 8) R.rect(px + 2, 190 - gh, 6, 3, i % 2 ? '#ff8fb8' : '#ffd25a'); }
+      for (let i = 0; i < pots; i++) { const px = 22 + i * 20, gh = Math.min(14, 3 + Math.floor((st0.total - i * 40) / 15)); R.rect(px, 190, 10, 7, '#b86a4a'); for (let j = 0; j < gh; j++) R.rect(px + 4 + Math.round(Math.sin(j * .8 + i) * 1.5), 190 - j, 2, 1, '#5aa86a'); if (gh > 8) R.rect(px + 2, 190 - gh, 6, 3, i % 2 ? '#f3a85e' : '#ffd25a'); }
       if (Stats.has('cactus')) { R.rect(124, 184, 8, 6, '#b86a4a'); R.rect(126, 174, 4, 10, '#4a8a5a'); }
       if (Stats.has('tank')) { R.rect(360, 158, 30, 18, '#3a6a9a'); R.rect(360, 156, 30, 2, '#cfdcec'); R.rect(366 + Math.sin(t) * 8, 166, 4, 2, '#f3a85a'); }
       Scenery.F.rug(R, 150, 214, 180, '#5a4a7a'); Scenery.F.plant(R, 352, 214); Scenery.F.bed(R, 'windowseat', 380, 232);
@@ -101,7 +101,7 @@
       R.rect(218, top - 26, 44, 26, '#2a2f3e'); R.rect(220, top - 24, 40, 20, '#0e1a12'); R.rect(212, top - 2, 56, 2, '#c3c8d4');
       for (let i = 0; i < 3; i++) { const k = ((t / 2 | 0) + i) % TICK.length, [n, v] = TICK[k], ch = Math.sin(t * .3 + k * 7) * 2.1; R.ctx.font = '12px Zpix'; R.text(n, 221, top - 23 + i * 6, { c: '#9affb0', sh: false }); R.text((v * (1 + ch / 100)).toFixed(1) + (ch >= 0 ? '▲' : '▼'), 259, top - 23 + i * 6, { al: 'r', c: ch >= 0 ? '#5aff8a' : '#ff6a7a', sh: false }); }
       // mugs with steam
-      for (const mx of [168, 306]) { R.rect(mx, top - 8, 8, 8, Stats.has('mug') ? '#ff8fb8' : '#e8e4f0'); R.rect(mx + 8, top - 6, 2, 4, Stats.has('mug') ? '#ff8fb8' : '#e8e4f0'); R.rect(mx + 1, top - 7, 6, 1, '#6a4030'); for (let j = 0; j < 3; j++) { const sy = ((t * 6 + j * 4) % 12); R.rect(mx + 3 + Math.sin(t * 2 + j) * 1.5, top - 10 - sy, 1, 2, '#ffffff', 0.5 * (1 - sy / 12)); } }
+      for (const mx of [168, 306]) { R.rect(mx, top - 8, 8, 8, Stats.has('mug') ? '#f3a85e' : '#e8e4f0'); R.rect(mx + 8, top - 6, 2, 4, Stats.has('mug') ? '#f3a85e' : '#e8e4f0'); R.rect(mx + 1, top - 7, 6, 1, '#6a4030'); for (let j = 0; j < 3; j++) { const sy = ((t * 6 + j * 4) % 12); R.rect(mx + 3 + Math.sin(t * 2 + j) * 1.5, top - 10 - sy, 1, 2, '#ffffff', 0.5 * (1 - sy / 12)); } }
       // cats: typing / blink / look / break stretch
       const tm = s.tm, focus = tm.ph === 'focus' && tm.run, brk = tm.ph === 'break';
       const pose = (i) => {
@@ -128,7 +128,7 @@
       R.panel(4, 18, 116, 112, { title: tm.ph === 'break' ? '休息 ☕' : tm.ph === 'focus' ? '专注 🍅' : '番茄钟' });
       R.text(fmt(tm.left), 62, 34, { al: 'c', size: 24, c: brk ? C.mint : tm.run ? C.cream : C.dim });
       const prog = tm.ph === 'focus' ? 1 - tm.left / (tm.pre[0] * 60) : tm.ph === 'break' ? 1 - tm.left / (tm.pre[1] * 60) : 0;
-      R.rect(10, 50, 104, 3, C.ink); R.rect(10, 50, 104 * Math.max(0, Math.min(1, prog)), 3, brk ? C.mint : C.pink);
+      R.rect(10, 50, 104, 3, C.ink); R.rect(10, 50, 104 * Math.max(0, Math.min(1, prog)), 3, brk ? C.mint : C.warm);
       PRESETS.forEach((p, i) => R.btn(8 + i * 28, 57, 26, 12, p[0] + '/' + p[1], { k: 'preset', f: p[0], b: p[1] }, { on: tm.pre[0] === p[0] && tm.pre[1] === p[1] }));
       R.btn(92, 57, 24, 12, '自定', () => R.ask('专注分钟/休息分钟（如 40/8）', tm.pre.join('/'), (v) => { const m = v.match(/(\d+)\D+(\d+)/); if (m) App.act({ k: 'preset', f: +m[1], b: +m[2] }, R.who()); }), { on: !PRESETS.some(p => p[0] === tm.pre[0] && p[1] === tm.pre[1]) });
       R.btn(8, 73, 52, 16, tm.run ? '暂停' : tm.ph === 'idle' ? '开始' : '继续', { k: tm.run ? 'pause' : 'start' }, { c: tm.run ? C.slate2 : '#3a7a5a' });
@@ -139,7 +139,7 @@
       // ---- goals + todos ----
       R.panel(364, 18, 112, 150, { title: '今日目标' });
       for (let i = 0; i < 2; i++) {
-        const y = 33 + i * 22; R.text(CAT_NAMES[i] + '：', 368, y, { c: i ? C.pink : C.blue });
+        const y = 33 + i * 22; R.text(CAT_NAMES[i] + '：', 368, y, { c: i ? C.gold : C.blue });
         const g = s.goals[i] || (R.me() === i ? '点这里写目标…' : '（还没写）');
         R.text(g.length > 9 ? g.slice(0, 9) + '…' : g, 368, y + 9, { c: s.goals[i] ? C.paper : C.dim, sh: false });
         if (R.me() === i || R.local()) R.hit(366, y - 1, 108, 20, () => R.ask(CAT_NAMES[i] + ' 今天的目标', s.goals[i], (v) => App.act({ k: 'goal', text: v }, R.local() ? i : R.who())), false);
@@ -167,7 +167,7 @@
         const S = Stats.load(); R.panel(120, 24, 240, 222, { title: '我们的学习记录（本机）' });
         R.text(`连续 ${S.streak} 天   ·   共 ${S.total} 分钟   ·   ${S.pomos} 个番茄`, 240, 42, { al: 'c', c: C.cream });
         const wk = Stats.week(), mx = Math.max(25, ...wk.map(w => w[1]));
-        wk.forEach(([d, m], i) => { const bx = 140 + i * 30, bh = Math.round(80 * m / mx); R.rect(bx, 140 - bh, 18, bh, i === 6 ? C.pink : C.blue); R.rect(bx, 140 - bh, 18, 1, '#ffffff'); R.text(d, bx + 9, 144, { al: 'c', c: C.dim }); if (m) R.text(String(m), bx + 9, 130 - bh, { al: 'c', c: C.paper, sh: false }); });
+        wk.forEach(([d, m], i) => { const bx = 140 + i * 30, bh = Math.round(80 * m / mx); R.rect(bx, 140 - bh, 18, bh, i === 6 ? C.warm : C.blue); R.rect(bx, 140 - bh, 18, 1, '#ffffff'); R.text(d, bx + 9, 144, { al: 'c', c: C.dim }); if (m) R.text(String(m), bx + 9, 130 - bh, { al: 'c', c: C.paper, sh: false }); });
         R.text('解锁', 132, 160, { c: C.gold });
         UNLOCKS.forEach((u, i) => { const got = S.total >= u[0], x = 132 + (i % 3) * 76, y = 172 + ((i / 3) | 0) * 22; R.panel(x, y, 72, 18, { fill: got ? '#3a4a3a' : C.ink2, shadow: false }); R.text((got ? '✓ ' : '🔒 ') + u[1], x + 4, y + 3, { c: got ? C.mint : C.dim, sh: false }); R.text(u[0] + '分', x + 4, y + 10, { c: C.dim, sh: false }); });
       }
@@ -186,7 +186,7 @@
     const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(src, 0, 0);
     g.fillStyle = 'rgba(13,15,23,.72)'; g.fillRect(240, 150, 480, 250); g.strokeStyle = '#f3c55e'; g.lineWidth = 4; g.strokeRect(244, 154, 472, 242);
     g.fillStyle = '#fff3d6'; g.font = '24px Zpix'; g.textAlign = 'center';
-    g.fillText(`${CAT_NAMES[0]} & ${CAT_NAMES[1]} 一起自习`, 480, 200); g.font = '24px Zpix'; g.fillStyle = '#ff8fb8';
+    g.fillText(`${CAT_NAMES[0]} & ${CAT_NAMES[1]} 一起自习`, 480, 200); g.font = '24px Zpix'; g.fillStyle = '#f3a85e';
     g.fillText(`今天 ${S.days[day()] || 0} 分钟 · 番茄 ${s.tm.n} 个`, 480, 250); g.fillStyle = '#8fe0b0'; g.fillText(`连续 ${S.streak} 天 · 共 ${S.total} 分钟`, 480, 296);
     g.font = '12px Zpix'; g.fillStyle = '#9aa3bd'; g.fillText(`${s.place} · ${day()} · 喵喵成行`, 480, 350);
     c.toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `miaomiao-study-${day()}.png`; document.body.appendChild(a); a.click(); a.remove(); GameUI.banner('结束卡已保存 📸', 1800); });

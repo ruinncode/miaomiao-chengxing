@@ -21,7 +21,7 @@ Cities.quick({
   hotels: [
     { id: 'tower', name: '明洞南山酒店', area: 'cityhall', x: 1100, room: 'modern', roomName: '南山塔景观房', view: 'namsan', floor: 20, tip: '推荐',
       desc: '明洞边上的高层酒店，晚上窗外是亮灯的南山塔。' },
-    { id: 'guest', name: '弘大小客栈', area: 'hongdae', x: 900, room: 'cozy', roomName: '阁楼双人房', view: 'hongdae', floor: 4,
+    { id: 'guest', name: '弘大小客栈', area: 'hongdae', x: 900, room: 'cozy', roomName: '阁楼双猫房', view: 'hongdae', floor: 4,
       desc: '弘大巷子里的小客栈，楼下就是咖啡店和街头演出。', lobby: { wall: '#e8d8c8', uniform: '#3a2a4a' }, hall: { wall: '#d8c8b8', carpet: '#5a4a6a', door: '#f4f4f4' } },
   ],
   areas: [

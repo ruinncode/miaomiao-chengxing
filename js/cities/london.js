@@ -49,7 +49,7 @@ Cities.quick({
     { id: 'quiz', name: '伦敦小测', area: 'southbank', x: 1000, icon: 'book', kind: 'quiz', tod: 'day', intro: '坐 Tube 前先答几道题。', real: '伦敦地铁 1863 年开通，是世界上最早的地铁。', cfg: { qtitle: '伦敦题', n: 4, qtime: 20, qs: [
       ['伦敦地铁的昵称？', ['the T', 'the Tube', 'MTR', 'Metro'], 1, '大家叫它 the Tube。'],
       ['“Mind the gap” 是？', ['小心站台空隙', '注意钱包', '别吵', '换乘'], 0, '提醒小心车厢和站台之间的空隙。'],
-      ['扶梯上站哪边？', ['左边', '右边', '中间', '坐下'], 1, '伦敦地铁扶梯靠右站，左边留给赶路的人。'],
+      ['扶梯上站哪边？', ['左边', '右边', '中间', '坐下'], 1, '伦敦地铁扶梯靠右站，左边留给赶路的猫。'],
       ['车靠哪边行驶？', ['左侧', '右侧', '中间', '随便'], 0, '英国是左侧通行，过马路先看右边。'],
     ] } },
     { id: 'thames', name: '泰晤士河划船', area: 'southbank', x: 600, icon: 'ticket', kind: 'paddle', tod: 'golden', time: 50, intro: '一起在泰晤士河上划小船，节奏一致就越划越快。', real: '泰晤士河穿过伦敦市中心，有很多观光船。', cfg: { goal: 650, vmax: 80, boatColor: '#c8102e' } },

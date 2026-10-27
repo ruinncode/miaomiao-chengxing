@@ -127,9 +127,9 @@ window.Art = (function () {
       // picture frames
       const frame = (x, y, w2, h2, inner) => { rect(x - 1, y - 1, w2 + 2, h2 + 2, INK); rect(x, y, w2, h2, 0x8a6a40); rect(x + 2, y + 2, w2 - 4, h2 - 4, inner); rect(x, y, w2, 1, 0xb08a54); };
       frame(236, 62, 34, 26, 0x2a3a5a); sil(px, 244, 70, ['..o..o....', '.oooooo...', '.oyooyo..o', '.oooooo.o.', '..oooooo..'], { o: 0x10121c, y: 0xf3c55e });
-      frame(282, 52, 22, 30, 0x3a2a3a); sil(px, 287, 60, ['.r.r.', 'rrrrr', 'rrrrr', '.rrr.', '..r..'], { r: 0xe8577a });
+      frame(282, 52, 22, 30, 0x3a2a3a); sil(px, 287, 60, ['.r.r.', 'rrrrr', 'rrrrr', '.rrr.', '..r..'], { r: 0xe04a48 });
       // string lights along the ceiling
-      for (let x = 0; x < BGW; x++) { const y = 10 + Math.round(Math.sin(x / 40) * 4 + 4); px(x, y, 0x0f1220); if (x % 26 === 13) { const c = [0xf6c76a, 0xe58aa6, 0x7cc8a4, 0x8fb4f0][(x / 26 | 0) % 4]; glow(px, x, y + 3, 7, c, 0.35); px(x, y + 2, c); px(x, y + 3, c); px(x - 1, y + 3, c); px(x + 1, y + 3, c, 0.7); px(x, y + 4, c); } }
+      for (let x = 0; x < BGW; x++) { const y = 10 + Math.round(Math.sin(x / 40) * 4 + 4); px(x, y, 0x0f1220); if (x % 26 === 13) { const c = [0xf6c76a, 0xf0a050, 0x7cc8a4, 0x8fb4f0][(x / 26 | 0) % 4]; glow(px, x, y + 3, 7, c, 0.35); px(x, y + 2, c); px(x, y + 3, c); px(x - 1, y + 3, c); px(x + 1, y + 3, c, 0.7); px(x, y + 4, c); } }
     });
     // layer 1: furniture in front of the wall (bookshelf, lamp, plant)
     canvasTex(scene, 'bg_room_1', BGW, 272, ({ px, rect }) => {
@@ -208,7 +208,7 @@ window.Art = (function () {
     canvasTex(scene, 'bg_garden_2', BGW, 272, ({ px }) => {
       // foreground bushes with flowers along the bottom
       for (let x = 0; x < BGW; x++) { const h = 238 + Math.round(Math.sin(x / 13) * 6 + Math.sin(x / 5.3) * 2); for (let y = h; y < 272; y++) px(x, y, y < h + 2 ? 0x2a4a48 : 0x1d3436); }
-      for (let i = 0; i < 46; i++) { const x = Math.floor(hash(i, 31) * BGW), y = 240 + Math.floor(hash(i, 32) * 22); const c = [0xe58aa6, 0xf3c55e, 0xe8ecff, 0xb98ae0][i % 4]; px(x, y, c); px(x - 1, y, mix(c, 0, 0.3)); px(x + 1, y, mix(c, 0, 0.3)); px(x, y - 1, mix(c, 0xffffff, 0.3)); px(x, y + 1, 0x3f7a4e); }
+      for (let i = 0; i < 46; i++) { const x = Math.floor(hash(i, 31) * BGW), y = 240 + Math.floor(hash(i, 32) * 22); const c = [0xf0a050, 0xf3c55e, 0xe8ecff, 0xb98ae0][i % 4]; px(x, y, c); px(x - 1, y, mix(c, 0, 0.3)); px(x + 1, y, mix(c, 0, 0.3)); px(x, y - 1, mix(c, 0xffffff, 0.3)); px(x, y + 1, 0x3f7a4e); }
     });
   }
 
@@ -268,7 +268,7 @@ window.Art = (function () {
             if (theme === 'garden') {
               for (let x = 0; x < S; x++) { const d = 4 + (hash(X + x, Y, 4) > 0.6 ? 1 : 0) + ((X + x) % 7 === 0 ? 1 : 0); for (let y = 0; y < d; y++) px(X + x, Y + y, y === 0 ? th.top[0] : y < 2 ? th.top[1] : y < d - 1 ? th.top[2] : th.top[3]); }
               for (let x = 0; x < S; x += 1) if (hash(X + x, Y, 5) > 0.7) px(X + x, Y - 1, th.top[1]);
-              if (hash(c, r, 8) > 0.6) { const fx = X + 3 + Math.floor(hash(c, r, 9) * 10), fc = [0xe58aa6, 0xf3c55e, 0xe8ecff][Math.floor(hash(c, r, 10) * 3)]; px(fx, Y - 2, th.top[2]); px(fx, Y - 3, fc); px(fx - 1, Y - 3, mix(fc, 0, 0.25)); px(fx + 1, Y - 3, mix(fc, 0, 0.25)); px(fx, Y - 4, mix(fc, 0xffffff, 0.35)); }
+              if (hash(c, r, 8) > 0.6) { const fx = X + 3 + Math.floor(hash(c, r, 9) * 10), fc = [0xf0a050, 0xf3c55e, 0xe8ecff][Math.floor(hash(c, r, 10) * 3)]; px(fx, Y - 2, th.top[2]); px(fx, Y - 3, fc); px(fx - 1, Y - 3, mix(fc, 0, 0.25)); px(fx + 1, Y - 3, mix(fc, 0, 0.25)); px(fx, Y - 4, mix(fc, 0xffffff, 0.35)); }
             } else if (theme === 'room') {
               for (let x = 0; x < S; x++) for (let y = 0; y < 6; y++) { const seam = (X + x + (r % 2) * 8) % 24 === 0; px(X + x, Y + y, y === 0 ? th.top[0] : seam ? th.top[3] : y === 5 ? th.top[3] : y > 3 ? th.top[2] : th.top[1]); }
               if ((X / 16) % 3 === 1) px(X + 6, Y + 2, th.top[3]);
@@ -299,7 +299,7 @@ window.Art = (function () {
   // ================= props =================
   function buildProps(scene) {
     const k = INK;
-    rowsTex(scene, 'heart', ['.kk.kk.', 'krhkrrk', 'krhrrrk', 'krrrrdk', '.krrdk.', '..kdk..', '...k...'], { k, r: 0xe8577a, h: 0xffb3c6, d: 0xa83a5a });
+    rowsTex(scene, 'heart', ['.kk.kk.', 'krhkrrk', 'krhrrrk', 'krrrrdk', '.krrdk.', '..kdk..', '...k...'], { k, r: 0xe04a48, h: 0xff9a88, d: 0xa83030 });
     rowsTex(scene, 'heartEmpty', ['.kk.kk.', 'keekeek', 'keeeeek', 'keeeeek', '.keeek.', '..kek..', '...k...'], { k, e: 0x3a4566 });
     const FISH = ['k...kkkkk...', 'kk.kbbbbbk..', 'kbkbbhhbwek.', 'kbbbbbbbbbbk', 'kbkbllllbbk.', 'kk.kdbbbdk..', 'k...kkkkk...'];
     rowsTex(scene, 'fish', FISH, { k, b: 0x6fa8dc, h: 0xb4dcf8, l: 0xd8ecf8, d: 0x3f6aa0, w: 0xffffff, e: 0x0d0f17 });
@@ -307,9 +307,9 @@ window.Art = (function () {
     rowsTex(scene, 'yarn', ['..kkkk...', '.kpPhpk..', 'kpPppPpk.', 'kPppPhpk.', 'kppPppPk.', 'kpPpPpPk.', '.kdPpdk..', '..kkkk.k.', '.......kk'], { k, p: 0xb98ae0, P: 0x8a5ab8, h: 0xe2c8ff, d: 0x6a4096 });
     rowsTex(scene, 'star', ['..k..', '.kyk.', 'kyyyk', '.kyk.', '.k.k.'], { k: 0x6a4a10, y: 0xffe066 });
     rowsTex(scene, 'sparkle', ['..w..', '..y..', 'wyWyw', '..y..', '..w..'], { w: 0xfff6d8, y: 0xffe066, W: 0xffffff });
-    rowsTex(scene, 'cup', ['.kkkkkkkk..', 'kwwwwwwwwk.', 'kppppppppkkk', 'kwwwwwwwwk.k', 'kwwwwwwwdkkk', '.kwwwwwdk..', '..kkkkkk...'], { k, w: 0xe8e4f0, p: 0xe58aa6, d: 0xa8a0bc });
+    rowsTex(scene, 'cup', ['.kkkkkkkk..', 'kwwwwwwwwk.', 'kppppppppkkk', 'kwwwwwwwwk.k', 'kwwwwwwwdkkk', '.kwwwwwdk..', '..kkkkkk...'], { k, w: 0xe8e4f0, p: 0xf0a050, d: 0xa8a0bc });
     rowsTex(scene, 'shadow', ['.kkkkkkkk.', 'kkkkkkkkkk', '.kkkkkkkk.'], { k: 0x05060c });
-    rowsTex(scene, 'shard', ['k.k.', '.w.k', 'k.p.'], { k: 0xe8e4f0, w: 0xe58aa6, p: 0xa8a0bc });
+    rowsTex(scene, 'shard', ['k.k.', '.w.k', 'k.p.'], { k: 0xe8e4f0, w: 0xf0a050, p: 0xa8a0bc });
     rowsTex(scene, 'note', ['..kk', '..kk', '..k.', '..k.', 'kkk.', 'kkk.'], { k: 0xe8ecff });
     rowsTex(scene, 'zz', ['kkkk....', '..k.....', '.k......', 'kkkk.kkk', '......k.', '.....kkk'], { k: 0xbac6ff });
     rowsTex(scene, 'paw', ['.k.k.', 'k.k.k', '.....', '.kkk.', 'kkkkk', '.kkk.'], { k: 0xffffff });
@@ -325,7 +325,7 @@ window.Art = (function () {
       rect(2, 3, 22, 6, 0x7a8098); rect(1, 4, 24, 4, 0x7a8098); rect(3, 3, 20, 2, 0xaab2cc); rect(4, 3, 18, 1, 0xd8deee);
       rect(9, 1, 8, 2, k); rect(10, 1, 6, 1, 0x5a6080); rect(1, 7, 24, 1, 0x4a5068);
       px(19, 5, 0xff5a5a); px(20, 5, 0xff5a5a); px(19, 4, 0xffb0b0); px(6, 5, 0x7cc8a4);
-      rect(4, 10, 4, 2, k); rect(18, 10, 4, 2, k); rect(0, 5, 2, 2, 0xe58aa6);
+      rect(4, 10, 4, 2, k); rect(18, 10, 4, 2, k); rect(0, 5, 2, 2, 0xf0a050);
     });
     // big boss vacuum 56x26 (angry)
     canvasTex(scene, 'bossvac', 58, 28, ({ px, rect }) => {
@@ -344,7 +344,7 @@ window.Art = (function () {
       px(1, 1, 0xf0c48a);
     });
     // pressure plates per channel & gate doors
-    const CHC = { a: [0xe58aa6, 0xffc0d4, 0xa8506e], b: [0x6fa8dc, 0xb8dcff, 0x3f6aa0], c: [0xf3c55e, 0xfff0b0, 0xb3822a] };
+    const CHC = { a: [0x7cc8a4, 0xc0f0d8, 0x3a8a64], b: [0x6fa8dc, 0xb8dcff, 0x3f6aa0], c: [0xf3c55e, 0xfff0b0, 0xb3822a] };
     for (const [ch, [c1, c2, c3]] of Object.entries(CHC)) {
       canvasTex(scene, `plate_${ch}`, 14, 5, ({ rect }) => { rect(2, 0, 10, 3, k); rect(3, 0, 8, 2, c1); rect(3, 0, 8, 1, c2); rect(0, 3, 14, 2, k); rect(1, 3, 12, 1, 0x5a6080); });
       canvasTex(scene, `plateP_${ch}`, 14, 5, ({ rect }) => { rect(2, 2, 10, 1, k); rect(3, 2, 8, 1, c3); rect(0, 3, 14, 2, k); rect(1, 3, 12, 1, 0x5a6080); });
@@ -385,7 +385,7 @@ window.Art = (function () {
       rect(3, 3, 10, 10, mix(base, lo, 0.35)); rect(3, 3, 10, 1, lo); rect(4, 4, 8, 8, base);
       sil(px, 5, 5, ['.k.k..', 'kkkk..', 'kkkk..', '.kk...'].map(r => r), { k: mark });
     });
-    crate('cplat_d', 0x2a2640, 0x4a4470, 0x16141f, 0xf3c55e); crate('cplat_l', 0xe0b88a, 0xfff0d0, 0xb08458, 0xe58aa6);
+    crate('cplat_d', 0x2a2640, 0x4a4470, 0x16141f, 0xf3c55e); crate('cplat_l', 0xe0b88a, 0xfff0d0, 0xb08458, 0xf0a050);
     crate('cghost_d', 0, 0x6a64a0, 0, 0, true); crate('cghost_l', 0, 0xe0b88a, 0, 0, true);
     for (let f = 0; f < 2; f++) canvasTex(scene, 'water' + f, 16, 16, ({ px, rect }) => {
       rect(0, 4, 16, 12, 0x24406a); rect(0, 8, 16, 8, 0x1a2f52);
@@ -412,7 +412,7 @@ window.Art = (function () {
       glow(px, 17, 32, 6, 0xf6c76a, 0.45);
       rect(7, 21, 5, 5, k); rect(8, 22, 3, 3, 0xf6c76a); px(8, 22, 0xffe7a3);
       rect(22, 21, 5, 5, k); rect(23, 22, 3, 3, 0xf6c76a); px(23, 22, 0xffe7a3);
-      sil(px, 14, 8, ['.r.r.', 'rrrrr', '.rrr.', '..r..'], { r: 0xe8577a });
+      sil(px, 14, 8, ['.r.r.', 'rrrrr', '.rrr.', '..r..'], { r: 0xe04a48 });
     });
     rowsTex(scene, 'swipe', ['..ww.....', '....wW...', '.....wW..', '......wW.', '......wW.', '.....wW..', '....wW...', '..ww.....'], { w: 0xe8ecff, W: 0xffffff });
     canvasTex(scene, 'ring', 64, 64, ({ px }) => { for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) { const d = Math.hypot(x - 31.5, y - 31.5); if (d > 28 && d < 31) px(x, y, (x + y) % 4 < 2 ? 0xffffff : 0xb98ae0); } });
@@ -436,7 +436,7 @@ window.Art = (function () {
       withCtx((ctx) => ctx.clearRect(0, 0, w, h));
       mask.forEach(([x, y]) => { px(x + 2, y + 2, 0x05060c); });
       mask.forEach(([x, y]) => { for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) if (!has(x + dx, y + dy)) px(x + dx, y + dy, INK); });
-      mask.forEach(([x, y]) => { const t = (y - 4) / S; px(x, y, !has(x, y - 1) ? 0xffffff : t < 0.45 ? 0xfff2cf : t < 0.7 ? 0xf6c76a : 0xe58aa6); });
+      mask.forEach(([x, y]) => { const t = (y - 4) / S; px(x, y, !has(x, y - 1) ? 0xffffff : t < 0.45 ? 0xfff2cf : t < 0.7 ? 0xf6c76a : 0xf0a050); });
     });
   }
 

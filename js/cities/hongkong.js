@@ -21,7 +21,7 @@ Cities.quick({
   hotels: [
     { id: 'harbour', name: '尖沙咀海景酒店', area: 'tst', x: 1100, room: 'modern', roomName: '维港景观房', view: 'harbour', floor: 28, tip: '推荐',
       desc: '海港边的高层酒店，晚上窗外是对岸亮灯的摩天楼。' },
-    { id: 'guest', name: '旺角小宾馆', area: 'mongkok', x: 900, room: 'capsule', roomName: '小小双人房', view: 'mongkok', floor: 9,
+    { id: 'guest', name: '旺角小宾馆', area: 'mongkok', x: 900, room: 'capsule', roomName: '小小双猫房', view: 'mongkok', floor: 9,
       desc: '唐楼里的小宾馆，房间小小的，楼下就是霓虹和小吃。', lobby: { wall: '#3a3a4a', uniform: '#2a2a2a' }, hall: { wall: '#4a4a5a', carpet: '#2a2a3a', door: '#c8c8d0' } },
   ],
   areas: [
@@ -52,7 +52,7 @@ Cities.quick({
     { id: 'lights', name: '维港夜景合影', area: 'tst', x: 600, icon: 'star', kind: 'photo', tod: 'night', intro: '对岸的楼都亮了！让太平山和天际线进框，两只猫靠在一起按 ↑。', real: '“幻彩咏香江”灯光秀每晚 8 点开始。', cfg: { target: .3, lmName: '太平山', n: 4 } },
     { id: 'market', name: '女人街夜市', area: 'mongkok', x: 750, icon: 'star', kind: 'collect', tod: 'night', intro: '通菜街夜市开档了！一起接住掉下来的硬币和星星。', real: '旺角通菜街一带的露天市集俗称“女人街”。', cfg: { items: ['coin', 'star', 'coin'], max: 6 } },
     { id: 'canto', name: '粤语小测', area: 'mongkok', x: 1350, icon: 'book', kind: 'quiz', tod: 'day', intro: '学几句粤语！两只猫一起答。', real: '香港的主要日常用语是粤语，路牌是中英双语。', cfg: { qtitle: '粤语题', n: 4, qtime: 20, qs: [
-      ['“谢谢”（别人帮忙）怎么说？', ['唔该', '早晨', '拜拜', '冇问题'], 0, '唔该（m4 goi1）用于别人帮忙；收礼物说“多谢”。'],
+      ['“谢谢”（别的猫帮忙）怎么说？', ['唔该', '早晨', '拜拜', '冇问题'], 0, '唔该（m4 goi1）用于别的猫帮忙；收礼物说“多谢”。'],
       ['“早晨”是？', ['晚安', '早上好', '吃饭', '下车'], 1, '早晨 = 早上好。'],
       ['下车跟司机说？', ['有落！', '埋单！', '加油！', '饮茶！'], 0, '坐小巴要下车喊“有落”。'],
       ['车靠哪边行驶？', ['右侧', '左侧', '中间', '随便'], 1, '香港是左侧通行。'],

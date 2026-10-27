@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>喵喵成行 · 两只猫，一起回家</title>
-<meta name="description" content="喵喵成行：两人在线合作的像素小猫游戏，还有对战小游戏。">
+<meta name="description" content="喵喵成行：两只猫在线合作的像素小猫游戏，还有对战小游戏。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
 <link rel="preload" href="fonts/zpix.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
@@ -19,14 +19,34 @@
       <div class="logo"><img class="sprite" data-tex="cat0_idle0" alt=""><img class="sprite heart" data-tex="heart" alt=""><img class="sprite flip" data-tex="cat1_idle0" alt=""></div>
       <h1 class="title">喵喵成行</h1>
       <p class="sub"><b class="n-p1">jsq</b> 和 <b class="n-p2">yyf</b>，两只小猫一起回家 · 隔着屏幕也能一起玩</p>
-      <button class="btn pink" id="btn-create">创建房间</button>
+      <button class="btn warm" id="btn-create">创建房间</button>
       <div class="join-row">
         <input id="join-code" maxlength="4" placeholder="房间码" autocomplete="off" autocapitalize="characters" spellcheck="false">
         <button class="btn blue" id="btn-join">加入</button>
       </div>
-      <button class="btn ghost" id="btn-local">同一台设备 · 双人</button>
+      <button class="btn ghost" id="btn-local">同一台设备 · 双猫</button>
       <p class="tiny">移动 WASD/方向键 · 跳 W/↑/空格 · 动作 F/J/回车 · 喵 E/M · 重来 R</p>
       <p class="err" id="title-err"></p>
+      <button class="btn ghost small" id="btn-credits">致谢 · Credits</button>
+    </div>
+
+    <!-- 致谢 -->
+    <div class="card hidden" id="screen-credits">
+      <h2>致谢 · Credits</h2>
+      <div class="credits">
+        <p><b>多伦多街道</b>：街道走向、建筑顺序与层数、店铺名称、电车站 / 地铁口 / Bike Share 位置来自 © OpenStreetMap contributors，<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">ODbL</a>。标着 approximate 的是估计值（见 js/cities/toronto-streets.js）。店铺只画店面与名字，没有商标。</p>
+        <p><b>实景像素窗景</b>（Wikimedia Commons 照片，经像素化、调色、分层处理）：</p>
+        <ul>
+          <li>湖滨天际线 — Maksim Sokolov (maxergon.com)，CC BY-SA 4.0</li>
+          <li>群岛黄昏 — Jchmrt，CC BY-SA 4.0</li>
+          <li>金融区 — Alessio Bragadini，CC BY-SA 2.0</li>
+          <li>酿酒厂区 — Mark，CC BY 2.0</li>
+          <li>Yonge-Eglinton — Maksim Sokolov (Maxergon)，CC BY-SA 4.0</li>
+        </ul>
+        <p>像素化后的图片按原照片的许可（CC BY-SA 的按相同方式共享）发布。完整出处见 CREDITS.md。</p>
+        <p>字体 Zpix（最像素）· SolidZORO；Phaser 3、PeerJS（MIT）。猫猫、房间、音乐都是本游戏原创；酒店房间与公司是虚构的。</p>
+      </div>
+      <button class="btn ghost" id="btn-credits-back">返回</button>
     </div>
 
     <!-- 房间 -->
@@ -59,7 +79,7 @@
         <button class="btn slate big hubm" data-hub="diary">旅行日记<small>剪贴簿 · 心愿清单 · 成就</small></button>
       </div>
       <div class="mode-quick"><span class="tiny">快速开始：</span>
-        <button class="btn pink small" id="btn-mode-coop">合作闯关</button>
+        <button class="btn warm small" id="btn-mode-coop">合作闯关</button>
         <button class="btn blue small" id="btn-mode-vs">对战 · 五局三胜</button>
       </div>
       <p class="tiny" id="tally"></p>
@@ -73,7 +93,7 @@
       <h1 id="end-title"></h1>
       <p class="msg" id="end-msg"></p>
       <p class="tiny" id="end-fish"></p>
-      <button class="btn pink" id="btn-again">再玩一次</button>
+      <button class="btn warm" id="btn-again">再玩一次</button>
       <button class="btn blue host-only" id="btn-end-mode">换个玩法</button>
       <button class="btn ghost" id="btn-end-menu">主菜单</button>
     </div>
@@ -84,7 +104,7 @@
       <h1 id="vs-title"></h1>
       <div class="vs-score" id="vs-score"></div>
       <p class="tiny" id="vs-history"></p>
-      <button class="btn pink" id="btn-rematch">再来一局</button>
+      <button class="btn warm" id="btn-rematch">再来一局</button>
       <button class="btn blue host-only" id="btn-vs-mode">换个玩法</button>
       <button class="btn ghost" id="btn-vs-menu">主菜单</button>
     </div>
@@ -126,6 +146,7 @@
 <script src="js/net.js"></script>
 <script src="js/art-cats.js"></script>
 <script src="js/art.js"></script>
+<script src="js/npc.js"></script>
 <script src="js/hub.js"></script>
 <script src="js/game.js"></script>
 <script src="js/hub-boot.js"></script>

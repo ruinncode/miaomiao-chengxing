@@ -9,7 +9,7 @@
     ['Laurier–Waterloo Park', '劳里埃-滑铁卢公园', 'park', 260], ['Waterloo Public Square', '滑铁卢公共广场', 'uptown', 560], ['Allen', '艾伦'], ['Grand River Hospital', '大河医院'],
     ['Central Station', '中央站', 'kitchener', 300], ['Kitchener City Hall', '基秦拿市政厅', 'kitchener', 900], ['Frederick', '弗雷德里克'], ['Kitchener Market', '基秦拿市场'],
     ['Borden', '博登'], ['Mill', '米尔'], ['Block Line', '布洛克线'], ['Fairway', '费尔韦']].map(([n, zh, area, x]) => ({ n, zh, area, x, under: false }));
-  const GO = [['Union', 'waterfront', 1600, 'toronto'], ['Bloor'], ['Mount Dennis'], ['Weston'], ['Etobicoke North'], ['Malton'], ['Bramalea'], ['Brampton Innovation District'], ['Mount Pleasant'], ['Georgetown'], ['Acton'], ['Guelph Central'], ['Kitchener', 'kitchener', 700]]
+  const GO = [['Union', 'union', 850, 'toronto'], ['Bloor'], ['Mount Dennis'], ['Weston'], ['Etobicoke North'], ['Malton'], ['Bramalea'], ['Brampton Innovation District'], ['Mount Pleasant'], ['Georgetown'], ['Acton'], ['Guelph Central'], ['Kitchener', 'kitchener', 700]]
     .map(([n, area, x, city]) => ({ n, area, x, city, under: false }));
 
   Cities.add({
@@ -110,7 +110,7 @@
           { id: 'hf', k: 'hotel', x: 1000, h: 'farm', name: 'St. Jacobs 乡间民宿', fw: 40, color: '#a87a4a' },
           { id: 'ph', k: 'act', x: 1250, act: 'country', icon: 'flower', name: '乡间风景拍照' },
           { id: 'b6', k: 'cuddle', kind: 'bench', x: 160, y: 230, name: '木头长椅' },
-          { id: 'sg', k: 'sign', x: 1400, text: 'St. Jacobs 一带有门诺派社区：路上可能会看到马车，请减速、礼让、不要随意拍人。' },
+          { id: 'sg', k: 'sign', x: 1400, text: 'St. Jacobs 一带有门诺派社区：路上可能会看到马车，请减速、礼让、不要随意拍别的猫。' },
         ] },
     ],
 
@@ -138,7 +138,7 @@
           ['2¹⁰ = ?', ['512', '1000', '1024', '2048'], 2, '2¹⁰ = 1024。'],
           ['二进制 1011 等于十进制的？', ['9', '11', '13', '1011'], 1, '8 + 2 + 1 = 11。'],
           ['84 和 36 的最大公约数？', ['6', '12', '18', '4'], 1, '84 = 12×7，36 = 12×3。'],
-          ['30 个人两两握手一次，一共握几次？', ['30', '435', '900', '870'], 1, 'C(30,2) = 30×29/2 = 435。'],
+          ['30 只猫两两握手一次，一共握几次？', ['30', '435', '900', '870'], 1, 'C(30,2) = 30×29/2 = 435。'],
           ['斐波那契 1,1,2,3,5… 第 10 项？', ['34', '55', '89', '44'], 1, '1,1,2,3,5,8,13,21,34,55。'],
           ['√2 是有理数吗？', ['是', '不是', '有时是', '看心情'], 1, '经典反证法：√2 是无理数。'],
           ['1 + 2 + … + 100 = ?', ['5000', '5050', '10100', '4950'], 1, '高斯：100×101/2 = 5050。'],
@@ -166,7 +166,7 @@
         intro: '周末早市！照清单采购：苹果油炸圈、枫糖浆、蜂蜜、奶酪粒、苹果派……买错要多等 3 秒。', real: "St. Jacobs Farmers' Market（周四/周六开市，夏季另有周二）；以官方营业时间为准。",
         cfg: { listTitle: '市集清单', n: 6, pool: [['苹果油炸圈', 'apple'], ['枫糖浆', 'syrup'], ['蜂蜜', 'syrup'], ['奶酪粒', 'coin'], ['苹果派', 'pie'], ['鲜花', 'flower'], ['玉米', 'star'], ['苹果酒', 'cup']] } },
       { id: 'country', name: '乡间风景拍照', area: 'stjacobs', kind: 'photo', view: 'farm', tod: 'golden', time: 40, good: 12,
-        intro: '金色的农田和远处的观光小火车。两只猫一起进框，按 ↑ 拍照（拍风景，别拍路人哦）。', real: 'Waterloo Central Railway：往返于 Waterloo 与 St. Jacobs / Elmira 的志愿者观光铁路。',
+        intro: '金色的农田和远处的观光小火车。两只猫一起进框，按 ↑ 拍照（拍风景，别拍路猫哦）。', real: 'Waterloo Central Railway：往返于 Waterloo 与 St. Jacobs / Elmira 的志愿者观光铁路。',
         cfg: { target: .4, lmName: '小火车', n: 4 } },
     ],
 
