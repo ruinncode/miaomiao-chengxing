@@ -36,23 +36,33 @@
       <p class="sub">把这个链接发给 <b class="n-p2">yyf</b>：</p>
       <div class="link-row"><input id="lobby-link" readonly><button class="btn small" id="btn-copy">复制</button></div>
       <p class="waiting" id="lobby-status"><span class="dots">正在连接服务器</span></p>
-      <p class="tiny">你是 <b class="n-p1">jsq</b>（黑猫 · 房主），<b class="n-p2">yyf</b> 是白猫。</p>
+      <p class="tiny">你是 <b class="n-p1">jsq</b>（系蓝绿色围巾的黑猫 · 房主），<b class="n-p2">yyf</b> 是戴黄色铃铛项圈的棕色虎斑猫。</p>
       <button class="btn ghost" id="btn-lobby-back">返回</button>
     </div>
 
     <div class="card hidden" id="screen-joining">
       <h2>加入房间 <span id="joining-code"></span></h2>
       <p class="waiting" id="joining-status"><span class="dots">正在寻找房间</span></p>
-      <p class="tiny">你是 <b class="n-p2">yyf</b>（白猫）。</p>
+      <p class="tiny">你是 <b class="n-p2">yyf</b>（棕色虎斑猫）。</p>
       <button class="btn ghost" id="btn-join-back">返回</button>
     </div>
 
     <!-- 选择玩法 -->
     <div class="card hidden" id="screen-mode">
-      <h2>选择玩法</h2>
+      <h2>出发大厅</h2>
       <p class="sub" id="mode-sub">两只猫都到齐啦！</p>
-      <button class="btn pink big" id="btn-mode-coop">合作闯关<small>5个关卡 · 一起回家</small></button>
-      <button class="btn blue big" id="btn-mode-vs">对战小游戏<small>抢小鱼 · 猫拳擂台 · 躲避扫地机 · 五局三胜</small></button>
+      <div class="mode-grid">
+        <button class="btn gold big hubm wide" data-hub="travel">✈ 出发旅行<small>出发大厅 · 收拾行李 · 酒店 · 街道 · 地铁 · 晚安</small></button>
+        <button class="btn mint big hubm" data-hub="games">小游戏厅<small>对战 · 合作闯关</small></button>
+        <button class="btn lilac big hubm" data-hub="study">一起自习室<small>番茄钟 · 目标清单 · lo-fi</small></button>
+        <button class="btn slate big hubm" data-hub="handheld">掌上游戏机<small>卡带小游戏</small></button>
+        <button class="btn slate big hubm" data-hub="diary">旅行日记<small>剪贴簿 · 心愿清单 · 成就</small></button>
+      </div>
+      <div class="mode-quick"><span class="tiny">快速开始：</span>
+        <button class="btn pink small" id="btn-mode-coop">合作闯关</button>
+        <button class="btn blue small" id="btn-mode-vs">对战 · 五局三胜</button>
+      </div>
+      <p class="tiny" id="tally"></p>
       <p class="waiting hidden" id="mode-wait"><span class="dots">等待 <b class="n-p1">jsq</b> 选择玩法</span></p>
       <button class="btn ghost" id="btn-mode-back">离开</button>
     </div>
@@ -80,6 +90,8 @@
     </div>
   </div>
 
+  <canvas id="hub" class="hidden" width="480" height="272"></canvas>
+  <div id="hubui" class="hidden"></div>
   <div id="banner" class="banner hidden"></div>
 
   <!-- 触屏按键 -->
@@ -92,12 +104,14 @@
     <div class="tright">
       <button data-k="meow" class="tsmall" aria-label="喵">喵</button>
       <button data-k="restart" class="tsmall" aria-label="重来">↻</button>
+      <button data-k="hug" class="tsmall thug" aria-label="抱抱">♥</button>
       <button data-k="a" class="tact" aria-label="动作">拍</button>
       <button data-k="j" class="tjump" aria-label="跳">跳</button>
     </div>
   </div>
   <div id="topbtns">
     <button id="btn-mute" title="声音开关">♪</button>
+    <button id="btn-music" title="选音乐">♫</button>
     <button id="btn-menu" title="主菜单" class="hidden">⌂</button>
   </div>
 </div>
@@ -110,7 +124,10 @@
 <script src="js/versus.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/net.js"></script>
+<script src="js/art-cats.js"></script>
 <script src="js/art.js"></script>
+<script src="js/hub.js"></script>
 <script src="js/game.js"></script>
+<script src="js/hub-boot.js"></script>
 </body>
 </html>
