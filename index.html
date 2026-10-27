@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>喵喵成行 · 两只猫，一起回家</title>
+<meta name="description" content="喵喵成行：两人在线合作的像素小猫游戏，还有对战小游戏。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+<link rel="preload" href="fonts/zpix.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="wrap">
+  <div id="game"></div>
+
+  <div id="overlay" class="overlay">
+    <!-- 标题 -->
+    <div class="card" id="screen-title">
+      <div class="logo"><img class="sprite" data-tex="cat0_idle0" alt=""><img class="sprite heart" data-tex="heart" alt=""><img class="sprite flip" data-tex="cat1_idle0" alt=""></div>
+      <h1 class="title">喵喵成行</h1>
+      <p class="sub">两只小猫，一起回家 · 隔着屏幕也能一起玩</p>
+      <button class="btn pink" id="btn-create">创建房间</button>
+      <div class="join-row">
+        <input id="join-code" maxlength="4" placeholder="房间码" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button class="btn blue" id="btn-join">加入</button>
+      </div>
+      <button class="btn ghost" id="btn-local">同一台设备 · 双人</button>
+      <p class="tiny">移动 WASD/方向键 · 跳 W/↑/空格 · 动作 F/J/回车 · 喵 E/M · 重来 R</p>
+      <p class="err" id="title-err"></p>
+    </div>
+
+    <!-- 房间 -->
+    <div class="card hidden" id="screen-lobby">
+      <h2>你的房间</h2>
+      <div class="code" id="lobby-code">····</div>
+      <p class="sub">把这个链接发给TA：</p>
+      <div class="link-row"><input id="lobby-link" readonly><button class="btn small" id="btn-copy">复制</button></div>
+      <p class="waiting" id="lobby-status"><span class="dots">正在连接服务器</span></p>
+      <p class="tiny">你是<b>黑猫</b>（房主），TA是<b>白猫</b>。</p>
+      <button class="btn ghost" id="btn-lobby-back">返回</button>
+    </div>
+
+    <div class="card hidden" id="screen-joining">
+      <h2>加入房间 <span id="joining-code"></span></h2>
+      <p class="waiting" id="joining-status"><span class="dots">正在寻找TA</span></p>
+      <p class="tiny">你是<b>白猫</b>。</p>
+      <button class="btn ghost" id="btn-join-back">返回</button>
+    </div>
+
+    <!-- 选择玩法 -->
+    <div class="card hidden" id="screen-mode">
+      <h2>选择玩法</h2>
+      <p class="sub" id="mode-sub">两只猫都到齐啦！</p>
+      <button class="btn pink big" id="btn-mode-coop">合作闯关<small>5个关卡 · 一起回家</small></button>
+      <button class="btn blue big" id="btn-mode-vs">对战小游戏<small>抢小鱼 · 猫拳擂台 · 躲避扫地机 · 五局三胜</small></button>
+      <p class="waiting hidden" id="mode-wait"><span class="dots">等待房主选择玩法</span></p>
+      <button class="btn ghost" id="btn-mode-back">离开</button>
+    </div>
+
+    <!-- 合作结局 -->
+    <div class="card hidden" id="screen-end">
+      <div class="logo big"><img class="sprite" data-tex="cat0_happy" alt=""><img class="sprite house" data-tex="house" alt=""><img class="sprite flip" data-tex="cat1_happy" alt=""></div>
+      <h1 id="end-title"></h1>
+      <p class="msg" id="end-msg"></p>
+      <p class="tiny" id="end-fish"></p>
+      <button class="btn pink" id="btn-again">再玩一次</button>
+      <button class="btn blue host-only" id="btn-end-mode">换个玩法</button>
+      <button class="btn ghost" id="btn-end-menu">主菜单</button>
+    </div>
+
+    <!-- 对战结果 -->
+    <div class="card hidden" id="screen-vsend">
+      <div class="logo big" id="vs-logo"><img class="sprite" id="vs-winner-img" data-tex="cat0_happy" alt=""></div>
+      <h1 id="vs-title"></h1>
+      <div class="vs-score" id="vs-score"></div>
+      <p class="tiny" id="vs-history"></p>
+      <button class="btn pink" id="btn-rematch">再来一局</button>
+      <button class="btn blue host-only" id="btn-vs-mode">换个玩法</button>
+      <button class="btn ghost" id="btn-vs-menu">主菜单</button>
+    </div>
+  </div>
+
+  <div id="banner" class="banner hidden"></div>
+
+  <!-- 触屏按键 -->
+  <div id="touch" class="hidden">
+    <div class="tleft">
+      <button data-k="l" aria-label="左">◀</button>
+      <button data-k="d" class="tsmall" aria-label="下">▼</button>
+      <button data-k="r" aria-label="右">▶</button>
+    </div>
+    <div class="tright">
+      <button data-k="meow" class="tsmall" aria-label="喵">喵</button>
+      <button data-k="restart" class="tsmall" aria-label="重来">↻</button>
+      <button data-k="a" class="tact" aria-label="动作">拍</button>
+      <button data-k="j" class="tjump" aria-label="跳">跳</button>
+    </div>
+  </div>
+  <div id="topbtns">
+    <button id="btn-mute" title="声音开关">♪</button>
+    <button id="btn-menu" title="主菜单" class="hidden">⌂</button>
+  </div>
+</div>
+
+<script src="lib/phaser.min.js"></script>
+<script src="lib/peerjs.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/versus.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/net.js"></script>
+<script src="js/art.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
