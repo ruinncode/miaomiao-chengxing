@@ -1,0 +1,63 @@
+// Paris — compact config. Right-hand traffic. Métro Line 1 (La Défense → Château de Vincennes, 25 stations)
+// and Line 6 (Charles de Gaulle–Étoile → Nation, 28 stations). Cafés, hotels and shops are fictional.
+Cities.quick({
+  id: 'paris', name: '巴黎', local: 'Paris', drive: 'R',
+  blurb: '铁塔下的草坪、塞纳河、卢浮宫和玛黑区的小巷；地铁 1 号线一路穿过市中心。',
+  palette: ['#d8c8a8', '#c8b898', '#e4d8c0', '#8a7a6a', '#b8a888'], styles: ['old', 'old', 'brick'],
+  shops: ['cafe', 'bakery', 'books', 'flowers', 'gift', 'grocery'],
+  shopNames: { cafe: ['Café du Chat', 'Le Petit Miaou'], bakery: ['Boulangerie Moustache', 'Pâtisserie Ronron'], books: ['Librairie des Quais'], flowers: ['Fleurs de Minuit'], gift: ['Souvenirs Lune'], grocery: ['Épicerie Patte'] },
+  signs: { welcome: 'Bienvenue à Paris', exit: 'Sortie', reception: 'Réception', towards: 'Direction', boarding: 'Quai', shop: { cafe: 'Café', books: 'Librairie', grocery: 'Épicerie', bakery: 'Boulangerie', flowers: 'Fleuriste', gift: 'Souvenirs', bar: 'Bar', tea: 'Salon de thé' } },
+  taxi: '#2a2a2a', streetSign: { bg: '#2a4a7a', fg: '#fff' },
+  ann: { next: 'Prochaine station :', arr: 'Arrivée à', end: 'Terminus' },
+  items: { bakery: [['可颂', 1], ['法棍', 1], ['马卡龙', 2]], cafe: [['咖啡欧蕾', 2], ['热巧克力', 2]], gift: [['铁塔钥匙扣', 2], ['明信片', 1]], flowers: [['一小束铃兰', 2]] },
+  views: {
+    eiffel: { id: 'pa-eiffel', horizon: .74, water: true, skyline: { far: { hMax: 26, kinds: ['old'] }, mid: { hMax: 34, hMin: 16, kinds: ['old', 'old'] }, near: false }, near: false,
+      landmarks: [{ k: 'eiffel', x: .5, depth: .45 }], movers: [{ k: 'boat', y: .86 }, { k: 'birds', y: .3 }] },
+    louvre: { id: 'pa-louvre', horizon: .76, skyline: { far: { hMax: 24, kinds: ['old'] }, mid: { hMax: 36, hMin: 18, kinds: ['old'] }, near: { kinds: ['old'] } },
+      landmarks: [{ k: 'eiffel', x: .82, depth: .2 }, { k: 'dome', x: .3, depth: .4 }], movers: [{ k: 'cars', side: 'R', n: 4 }, { k: 'birds', y: .32 }] },
+    marais: { id: 'pa-marais', horizon: .78, skyline: { far: { hMax: 24, kinds: ['old'] }, mid: { hMax: 30, hMin: 16, kinds: ['old', 'brick'] }, near: { kinds: ['old'] } }, movers: [{ k: 'cars', side: 'R', n: 3 }] },
+  },
+  hotels: [
+    { id: 'attic', name: '塞纳河畔阁楼旅馆', area: 'eiffel', x: 1100, room: 'paris', roomName: '屋顶阁楼', view: 'eiffel', floor: 6, tip: '推荐',
+      desc: '奥斯曼老楼的顶层阁楼，斜屋顶小窗正对铁塔；整点会闪灯。', lobby: { wall: '#e4d8c0', uniform: '#2a3a5a' }, hall: { wall: '#d8c8a8', carpet: '#7a2a3a', door: '#5a4a3a' } },
+    { id: 'marais', name: '玛黑区精品酒店', area: 'marais', x: 900, room: 'modern', roomName: '庭院房', view: 'marais', floor: 4, desc: '老石头楼改的小酒店，窗外是安静的内院和邻居的阳台。' },
+  ],
+  areas: [
+    { id: 'eiffel', name: '埃菲尔铁塔 · 战神广场', view: 'eiffel', start: 400, bench: 1300, benchName: '战神广场草坪边的长椅',
+      street: { len: 7, cross: [3], names: ['Avenue de Suffren'], label: 'Quai Branly', styles: ['old', 'old'], shops: ['cafe', 'bakery', 'gift', 'flowers'], trees: true },
+      sign: [800, '埃菲尔铁塔：1889 年世博会建成，天黑后每个整点会闪烁几分钟。'] },
+    { id: 'louvre', name: '卢浮宫 · 杜乐丽', view: 'louvre', start: 400, bench: 1200, benchName: '杜乐丽花园的绿椅子',
+      street: { len: 7, cross: [2, 5], names: ['Rue de Rivoli', 'Rue de Castiglione'], label: 'Rue de Rivoli', styles: ['old'], shops: ['cafe', 'books', 'gift', 'bakery'], trees: true },
+      lib: [1600, '塞纳河边的旧书摊', 'books'] },
+    { id: 'marais', name: '玛黑区', view: 'marais', start: 300, bench: 1100, benchName: '孚日广场的长椅',
+      street: { len: 6, cross: [2], names: ['Rue des Rosiers'], label: 'Rue de Rivoli', styles: ['old', 'brick'], shops: ['bakery', 'books', 'flowers', 'grocery', 'cafe'] },
+      sign: [600, '孚日广场（Place des Vosges）是巴黎最古老的规划广场之一。'] },
+  ],
+  lines: [
+    { id: 'm1', name: 'Métro 1 号线', short: '1', color: '#ffcd00', text: '#111', body: '#e4e6ea', car: 'subway',
+      st: ['La Défense|拉德芳斯', 'Esplanade de La Défense|拉德芳斯广场', 'Pont de Neuilly|讷伊桥', 'Les Sablons|萨布隆', 'Porte Maillot|马约门', 'Argentine|阿根廷', 'Charles de Gaulle–Étoile|戴高乐星形广场', 'George V|乔治五世', 'Franklin D. Roosevelt|罗斯福', 'Champs-Élysées–Clemenceau|香榭丽舍-克列孟梭', 'Concorde|协和', 'Tuileries|杜乐丽', 'Palais Royal–Musée du Louvre|王宫-卢浮宫@louvre:300', 'Louvre–Rivoli|卢浮-里沃利', 'Châtelet|夏特雷', 'Hôtel de Ville|市政厅', 'Saint-Paul|圣保罗@marais:300', 'Bastille|巴士底', 'Gare de Lyon|里昂火车站', 'Reuilly–Diderot|勒伊-狄德罗', 'Nation|民族广场', 'Porte de Vincennes|樊尚门', 'Saint-Mandé|圣芒代', 'Bérault|贝罗', 'Château de Vincennes|樊尚城堡'] },
+    { id: 'm6', name: 'Métro 6 号线', short: '6', color: '#6eca97', text: '#111', body: '#e4e6ea', car: 'metro', under: false, view: 'eiffel',
+      st: ['Charles de Gaulle–Étoile|戴高乐星形广场', 'Kléber|克莱贝尔', 'Boissière|布瓦西埃', 'Trocadéro|特罗卡德罗', '^Passy|帕西', '^Bir-Hakeim|比尔哈克姆@eiffel:300', '^Dupleix|杜普雷', '^La Motte-Picquet–Grenelle|拉莫特-皮凯-格勒奈勒', '^Cambronne|康布罗纳', '^Sèvres–Lecourbe|塞夫勒-勒古布', 'Pasteur|巴斯德', 'Montparnasse–Bienvenüe|蒙帕纳斯', 'Edgar Quinet|埃德加·基内', 'Raspail|拉斯帕伊', 'Denfert-Rochereau|当费尔-罗什洛', 'Saint-Jacques|圣雅克', '^Glacière|格拉西埃', '^Corvisart|科维萨尔', "Place d'Italie|意大利广场", '^Nationale|国家', '^Chevaleret|舍瓦勒雷', '^Quai de la Gare|车站码头', 'Bercy|贝尔西', 'Dugommier|迪戈米耶', 'Daumesnil|多梅尼尔', 'Bel-Air|贝莱尔', 'Picpus|皮克皮斯', 'Nation|民族广场'] },
+  ],
+  routes: [
+    ['卢浮宫 → 玛黑区', '1 号线往东 4 站：卢浮-里沃利、夏特雷、市政厅、圣保罗。', [['m1', 'Palais Royal–Musée du Louvre', 'Saint-Paul']]],
+    ['6 号线看铁塔', '6 号线在比尔哈克姆附近走高架，过塞纳河时能看到铁塔。', [['m6', 'Charles de Gaulle–Étoile', 'Bir-Hakeim']]],
+    ['从香榭丽舍到卢浮宫', '1 号线从戴高乐星形广场坐到王宫-卢浮宫。', [['m1', 'Charles de Gaulle–Étoile', 'Palais Royal–Musée du Louvre']]],
+  ],
+  acts: [
+    { id: 'picnic', name: '铁塔下野餐', area: 'eiffel', x: 600, icon: 'apple', kind: 'order', tod: 'golden', intro: '在战神广场铺好野餐布！照着清单从篮子里拿：法棍、奶酪、草莓……', real: '战神广场（Champ de Mars）是铁塔前的大草坪，天气好时很多人在这里野餐。',
+      cfg: { listTitle: '野餐篮', n: 5, pool: [['法棍', 'star'], ['奶酪', 'coin'], ['草莓', 'apple'], ['可颂', 'star'], ['柠檬水', 'cup'], ['马卡龙', 'flower']] } },
+    { id: 'sparkle', name: '铁塔闪灯合影', area: 'eiffel', x: 1600, icon: 'star', kind: 'photo', tod: 'night', intro: '整点到了，铁塔开始闪！让铁塔进框，两只猫靠在一起按 ↑。', real: '夜里铁塔的闪灯每个整点持续约 5 分钟。', cfg: { target: .5, lmName: '埃菲尔铁塔', n: 4 } },
+    { id: 'seine', name: '塞纳河划船', area: 'louvre', x: 1100, icon: 'ticket', kind: 'paddle', tod: 'golden', time: 50, intro: '一起划小船过塞纳河，节奏一致就越划越快。', real: '塞纳河两岸从 1991 年起被列为联合国世界遗产。', cfg: { goal: 650, vmax: 80, boatColor: '#2a4a7a' } },
+    { id: 'french', name: '法语小测', area: 'marais', x: 1300, icon: 'book', kind: 'quiz', tod: 'day', intro: '进面包店前先学两句！两只猫一起答。', real: '在法国进店先说 Bonjour 是基本礼貌。', cfg: { qtitle: '法语题', n: 4, qtime: 20, qs: [
+      ['进店第一句话？', ['Bonjour', 'Au revoir', 'Merci', 'Pardon'], 0, 'Bonjour = 你好，进店先打招呼。'],
+      ['“谢谢”怎么说？', ['Oui', 'Merci', 'Non', 'Salut'], 1, 'Merci（谢谢）；Merci beaucoup（非常感谢）。'],
+      ['baguette 是？', ['长棍面包', '帽子', '地铁票', '猫'], 0, 'baguette 是法式长棍面包。'],
+      ['地铁出口的牌子写？', ['Entrée', 'Sortie', 'Quai', 'Direction'], 1, 'Sortie = 出口。'],
+      ['“猫”的法语是？', ['chien', 'chat', 'chou', 'chapeau'], 1, 'chat = 猫，读音像“沙”。'],
+    ] } },
+  ],
+  map: { land: '#e4dccc', water: [[0, 52, 100, 5]], parks: [[18, 56, 10, 10], [46, 42, 10, 6]],
+    lines: { m1: [[2, 30], [24, 30], [46, 44], [62, 46], [80, 48], [98, 50]], m6: [[24, 30], [20, 58], [40, 80], [64, 74], [80, 48]] },
+    labels: [[60, 58, '塞纳河', '#3a6a9a']], areas: { eiffel: [18, 64], louvre: [42, 38], marais: [70, 54] } },
+});

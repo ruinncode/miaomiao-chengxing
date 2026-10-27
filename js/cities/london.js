@@ -1,0 +1,60 @@
+// London — compact config. Left-hand traffic. Jubilee line, Stanmore → Stratford (27 stations).
+// Pubs, cafés and hotels are fictional.
+Cities.quick({
+  id: 'london', name: '伦敦', local: 'London', drive: 'L',
+  blurb: '大本钟、泰晤士河南岸、伦敦眼和贝克街 221B；下午茶配司康。',
+  palette: ['#c8b898', '#8a5a4a', '#d8d0c4', '#6a6a7a', '#9a7a5a'], styles: ['old', 'brick', 'glass'], laneColor: '#f4f4f4',
+  shops: ['cafe', 'tea', 'books', 'bakery', 'bar', 'gift', 'flowers'],
+  shopNames: { cafe: ['The Purring Kettle', 'Mews Coffee'], tea: ['Whiskers Tea Room'], books: ['Baker Street Books'], bakery: ['Scone & Paw'], bar: ['The Sleepy Cat (pub)'], gift: ['Red Bus Gifts'], flowers: ['Covent Blooms'] },
+  signs: { welcome: 'Welcome to London', exit: 'Way out', reception: 'Reception', towards: 'To', boarding: 'Platform', shop: { cafe: 'Café', tea: 'Tea Room', books: 'Books', bakery: 'Bakery', bar: 'Pub', gift: 'Gifts', flowers: 'Florist' } },
+  taxi: '#1a1a1a', streetSign: { bg: '#f4f4f0', fg: '#1a1a1a' },
+  ann: { next: 'The next station is', arr: 'This is', end: 'This train terminates here' },
+  items: { tea: [['伯爵茶', 2], ['司康配果酱', 2]], bakery: [['香肠卷', 1], ['维多利亚海绵蛋糕', 2]], gift: [['红色电话亭模型', 3], ['地铁“Mind the gap”贴纸', 1]] },
+  views: {
+    westminster: { id: 'lo-westminster', horizon: .7, water: true, skyline: { far: { hMax: 30, kinds: ['old'] }, mid: { hMax: 34, hMin: 16, kinds: ['old', 'brick'] }, near: false }, near: false,
+      landmarks: [{ k: 'bigben', x: .4, depth: .45 }, { k: 'wheel', x: .8, depth: .35, anim: true }], movers: [{ k: 'boat', y: .86 }, { k: 'birds', y: .3 }] },
+    southbank: { id: 'lo-southbank', horizon: .68, water: true, skyline: { far: { hMax: 70, kinds: ['glass', 'old'] }, mid: { hMax: 30, hMin: 14, kinds: ['old', 'brick'] }, near: false }, near: false,
+      landmarks: [{ k: 'wheel', x: .55, depth: .4, anim: true }, { k: 'bigben', x: .2, depth: .25 }], movers: [{ k: 'boat', y: .86 }, { k: 'geese', y: .3 }] },
+    baker: { id: 'lo-baker', horizon: .78, skyline: { far: { hMax: 30, kinds: ['old', 'brick'] }, mid: { hMax: 34, hMin: 16, kinds: ['brick', 'old'] }, near: { kinds: ['brick', 'old'] } }, movers: [{ k: 'cars', side: 'L', n: 4, taxi: true }, { k: 'birds', y: .3 }] },
+  },
+  hotels: [
+    { id: 'bnb', name: '贝克街红砖民宿', area: 'baker', x: 1000, room: 'cozy', roomName: '壁炉小房间', view: 'baker', floor: 2, tip: '推荐',
+      desc: '维多利亚式排屋，壁炉、碎花窗帘和一壶热茶。', lobby: { wall: '#8a5a4a', uniform: '#2a2a3a' }, hall: { wall: '#7a4a3a', carpet: '#5a2a2a', door: '#1a1a1a' } },
+    { id: 'river', name: '南岸河景酒店', area: 'southbank', x: 1100, room: 'modern', roomName: '河景房', view: 'southbank', floor: 12, desc: '泰晤士河南岸，窗外是伦敦眼和对岸的大本钟。' },
+  ],
+  areas: [
+    { id: 'baker', name: '贝克街', view: 'baker', start: 500, bench: 1300, benchName: '摄政公园的长椅',
+      street: { len: 7, cross: [3], names: ['Melcombe St'], label: 'Baker St', styles: ['brick', 'old'], shops: ['books', 'tea', 'cafe', 'gift', 'bakery'], trees: true },
+      sign: [700, '贝克街 221B：小说里福尔摩斯的家（现实中那是个博物馆）。'] },
+    { id: 'westminster', name: '威斯敏斯特', view: 'westminster', start: 400, bench: 1500, benchName: '河边的长椅',
+      street: { len: 7, cross: [2], names: ['Parliament St'], label: 'Whitehall', styles: ['old', 'old'], shops: ['gift', 'cafe', 'bar', 'books'] },
+      sign: [1200, '大本钟其实是钟楼里那口大钟的名字，钟楼叫伊丽莎白塔。'] },
+    { id: 'southbank', name: '南岸 · 伦敦眼', view: 'southbank', start: 400, bench: 800, benchName: '南岸步道的长椅',
+      street: { len: 6, cross: [2], names: ['Belvedere Rd'], label: 'Waterloo Rd', styles: ['glass', 'old', 'brick'], shops: ['cafe', 'books', 'bakery', 'bar'], trees: true },
+      lib: [1300, '南岸旧书市', 'books'] },
+  ],
+  lines: [
+    { id: 'jub', name: 'Jubilee 线', short: 'Jubilee', color: '#a0a5a9', text: '#111', body: '#e4e6ea', car: 'subway',
+      st: ['^Stanmore|斯坦莫尔', '^Canons Park|卡农斯公园', '^Queensbury|昆斯伯里', '^Kingsbury|金斯伯里', '^Wembley Park|温布利公园', '^Neasden|尼斯登', '^Dollis Hill|多利斯山', '^Willesden Green|威尔斯登格林', '^Kilburn|基尔伯恩', '^West Hampstead|西汉普斯特德', 'Finchley Road|芬奇利路', "Swiss Cottage|瑞士小屋", "St. John's Wood|圣约翰伍德", 'Baker Street|贝克街@baker:300', 'Bond Street|邦德街', 'Green Park|绿园', 'Westminster|威斯敏斯特@westminster:300', 'Waterloo|滑铁卢@southbank:300', 'Southwark|萨瑟克', 'London Bridge|伦敦桥', 'Bermondsey|伯蒙德西', 'Canada Water|加拿大水', 'Canary Wharf|金丝雀码头', 'North Greenwich|北格林威治', '^Canning Town|坎宁镇', '^West Ham|西汉姆', '^Stratford|斯特拉特福'] },
+  ],
+  routes: [
+    ['贝克街 → 威斯敏斯特', 'Jubilee 线往南 3 站，出站抬头就是大本钟。', [['jub', 'Baker Street', 'Westminster']]],
+    ['过河去南岸', 'Jubilee 线一站从威斯敏斯特到滑铁卢。', [['jub', 'Westminster', 'Waterloo']]],
+    ['去金丝雀码头', 'Jubilee 线往东，车站又高又亮。', [['jub', 'Waterloo', 'Canary Wharf']]],
+  ],
+  acts: [
+    { id: 'tea', name: '英式下午茶', area: 'baker', x: 1550, icon: 'cup', kind: 'order', tod: 'day', intro: '三层点心架来了！照着清单拿：司康、三明治、蛋糕……', real: '下午茶据说在 1840 年代由贝德福德公爵夫人带火。',
+      cfg: { listTitle: '点心架', n: 5, pool: [['司康', 'coin'], ['黄瓜三明治', 'leaf'], ['伯爵茶', 'cup'], ['草莓果酱', 'apple'], ['柠檬挞', 'pie'], ['凝脂奶油', 'star']] } },
+    { id: 'bigben', name: '大本钟合影', area: 'westminster', x: 800, icon: 'star', kind: 'photo', tod: 'golden', intro: '从河边取景，让大本钟进框，两只猫靠在一起按 ↑。', real: '伊丽莎白塔（大本钟）1859 年开始报时，2022 年修缮完成。', cfg: { target: .4, lmName: '大本钟', n: 4 } },
+    { id: 'quiz', name: '伦敦小测', area: 'southbank', x: 1000, icon: 'book', kind: 'quiz', tod: 'day', intro: '坐 Tube 前先答几道题。', real: '伦敦地铁 1863 年开通，是世界上最早的地铁。', cfg: { qtitle: '伦敦题', n: 4, qtime: 20, qs: [
+      ['伦敦地铁的昵称？', ['the T', 'the Tube', 'MTR', 'Metro'], 1, '大家叫它 the Tube。'],
+      ['“Mind the gap” 是？', ['小心站台空隙', '注意钱包', '别吵', '换乘'], 0, '提醒小心车厢和站台之间的空隙。'],
+      ['扶梯上站哪边？', ['左边', '右边', '中间', '坐下'], 1, '伦敦地铁扶梯靠右站，左边留给赶路的人。'],
+      ['车靠哪边行驶？', ['左侧', '右侧', '中间', '随便'], 0, '英国是左侧通行，过马路先看右边。'],
+    ] } },
+    { id: 'thames', name: '泰晤士河划船', area: 'southbank', x: 600, icon: 'ticket', kind: 'paddle', tod: 'golden', time: 50, intro: '一起在泰晤士河上划小船，节奏一致就越划越快。', real: '泰晤士河穿过伦敦市中心，有很多观光船。', cfg: { goal: 650, vmax: 80, boatColor: '#c8102e' } },
+  ],
+  map: { land: '#e0dccc', water: [[0, 60, 100, 6]], parks: [[30, 20, 14, 14]],
+    lines: { jub: [[2, 4], [20, 14], [38, 30], [44, 50], [50, 66], [66, 68], [80, 74], [98, 50]] },
+    labels: [[70, 64, '泰晤士河', '#3a6a9a']], areas: { baker: [38, 30], westminster: [44, 52], southbank: [50, 70] } },
+});

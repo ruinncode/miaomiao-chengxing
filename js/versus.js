@@ -293,15 +293,15 @@
 
   // Best-of-5 match (first to 3 round wins; ties replay up to 9 rounds)
   class VsMatch {
-    constructor(physics, seed = Date.now()) {
-      this.physics = physics; this.seed = seed;
+    constructor(physics, seed = Date.now(), opt = {}) {
+      this.physics = physics; this.seed = seed; this.order = opt.order || ORDER; this.need = opt.need || 3;
       this.wins = [0, 0]; this.roundNo = 0; this.history = [];
       this.events = [];
       this.nextRound();
     }
     nextRound() {
       this.roundNo++;
-      const type = ORDER[(this.roundNo - 1) % ORDER.length];
+      const type = this.order[(this.roundNo - 1) % this.order.length];
       this.round = new VsRound(type, this.physics, this.seed + this.roundNo * 7919);
       this.phase = 'intro'; this.phaseT = 0;
       this.events.push(['round', this.roundNo, type]);
@@ -321,7 +321,7 @@
       } else if (this.phase === 'roundEnd') {
         this.round.step([{}, {}]); this.round.events = [];
         if (this.phaseT > 3) {
-          if (this.wins[0] >= 3 || this.wins[1] >= 3 || this.roundNo >= 9) { this.phase = 'matchEnd'; this.phaseT = 0; this.events.push(['matchover', this.matchWinner()]); }
+          if (this.wins[0] >= this.need || this.wins[1] >= this.need || this.roundNo >= this.need * 3) { this.phase = 'matchEnd'; this.phaseT = 0; this.events.push(['matchover', this.matchWinner()]); }
           else this.nextRound();
         }
       } else if (this.phase === 'matchEnd') { this.round.sim.step([{}, {}]); this.round.sim.takeEvents(); }

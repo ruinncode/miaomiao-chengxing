@@ -27,19 +27,29 @@
       this.grid = [];       // true = wall
       this.doors = []; this.plates = []; this.fish = []; this.boxes = [];
       this.doorAt = {};     // "c,r" -> door
+      this.levers = []; this.bridgeAt = {}; this.bridges = []; this.springs = []; this.pads = []; this.switches = [];
+      this.water = []; this.convs = []; this.latch = {}; this.timer = {}; this.swapped = false; this.leverOn = false;
+      this.convDir = 1; this.convT = 0; this.flipConv = !!L.flipConv; this.boss = null; this.bossBtns = [];
       let spawns = [];
       let gx0 = 1e9, gy0 = 1e9, gx1 = -1, gy1 = -1;
       for (let r = 0; r < this.rows; r++) {
         this.grid.push([]);
         for (let c = 0; c < this.cols; c++) {
           const ch = L.map[r][c];
-          this.grid[r].push(ch === '#' ? 1 : (ch === '=' ? 2 : 0));
+          this.grid[r].push(ch === '#' ? 1 : ch === '=' ? 2 : ch === 'd' ? 3 : ch === 'w' ? 4 : (ch === '<' || ch === '>') ? 5 : 0);
+          if (ch === '<' || ch === '>') this.convs.push({ c, r, dir: ch === '>' ? 1 : -1 });
+          if (ch === 'k') this.levers.push({ x: c * T + 4, y: r * T, w: 24, h: T, c, r });
+          if (ch === 'X') this.switches.push({ x: c * T + 4, y: r * T, w: 24, h: T, c, r });
+          if (ch === 'H') { const b = { c, r }; this.bridges.push(b); this.bridgeAt[c + ',' + r] = b; }
+          if (ch === '^') this.springs.push({ x: c * T + 2, y: (r + 1) * T - 10, w: 28, h: 10, c, r, t: 0 });
+          if (ch === 'P') this.pads.push({ x: c * T + 1, y: (r + 1) * T - 10, w: 30, h: 10, c, r, t: 0 });
+          if (ch === '~') this.water.push({ x: c * T, y: r * T + 8, w: T, h: T - 8, c, r });
           if (ch === '1' || ch === '2') spawns[+ch - 1] = { x: c * T + (T - CAT_W) / 2, y: (r + 1) * T - CAT_H };
           else if (ch === 'G') { gx0 = Math.min(gx0, c); gy0 = Math.min(gy0, r); gx1 = Math.max(gx1, c); gy1 = Math.max(gy1, r); }
           else if (ch === 'O') this.boxes.push({ x: c * T + (T - BOX_S) / 2, y: (r + 1) * T - BOX_S, w: BOX_S, h: BOX_S, vy: 0, kind: 'box' });
           else if (ch === '*') this.fish.push({ x: c * T + 6, y: r * T + 8, w: 20, h: 16, got: false });
-          else if (ch >= 'a' && ch <= 'c') this.plates.push({ ch, x: c * T + 3, y: (r + 1) * T - 6, w: 26, h: 6, pressed: false });
-          else if (ch >= 'A' && ch <= 'C') {
+          else if ('abcutpq'.includes(ch)) this.plates.push({ ch, x: c * T + 3, y: (r + 1) * T - 6, w: 26, h: 6, pressed: false });
+          else if ('ABCUTQ'.includes(ch)) {
             const d = { ch: ch.toLowerCase(), c, r, x: c * T, y: r * T, w: T, h: T, solid: true, open: 0 };
             this.doors.push(d); this.doorAt[c + ',' + r] = d;
           }
@@ -49,8 +59,10 @@
       this.cats = spawns.map((s, i) => ({
         id: i, x: s.x, y: s.y, w: CAT_W, h: CAT_H, vx: 0, vy: 0, face: i === 0 ? 1 : 1,
         onGround: true, standOn: null, coyote: 0, jbuf: 0, jprev: false, pushing: false,
-        spawnX: s.x, spawnY: s.y, dx: 0, dy: 0, kind: 'cat', stun: 0, dead: false, dropT: 0,
+        spawnX: s.x, spawnY: s.y, dx: 0, dy: 0, kind: 'cat', stun: 0, dead: false, dropT: 0, aprev: false,
       }));
+      if (L.boss) this.boss = { x: L.boss.x * T, y: (L.boss.r + 1) * T - 44, w: 92, h: 44, dir: -1, spd: L.boss.spd || 110, hp: L.boss.hp || 3, stun: 0, hitT: 0, x0: L.boss.x0 * T, x1: L.boss.x1 * T };
+      this.bossPress = {};
       this.events = [];
       this.time = 0;
       this.goalTimer = 0;
@@ -59,9 +71,16 @@
     }
 
     // ---------- collision helpers ----------
-    tileSolid(c, r) {
+    tileSolid(c, r, e) {
       if (c < 0 || r < 0 || c >= this.cols || r >= this.rows) return this.outOfBoundsSolid(c, r);
-      if (this.grid[r][c] === 1) return true;
+      const g = this.grid[r][c];
+      if (g === 1 || g === 5) return true;
+      if (g === 3 || g === 4) { // dark blocks only for the black cat (id 0), light only for id 1; boxes collide with both
+        if (!e || e.kind !== 'cat') return true;
+        const dark = (g === 3) !== this.swapped;
+        return dark ? e.id === 0 : e.id === 1;
+      }
+      if (this.leverOn && this.bridgeAt[c + ',' + r]) return true;
       const d = this.doorAt[c + ',' + r];
       return !!(d && d.solid);
     }
@@ -71,7 +90,7 @@
       const c0 = Math.floor(e.x / T), c1 = Math.floor((e.x + e.w - 0.001) / T);
       const r0 = Math.floor(e.y / T), r1 = Math.floor((e.y + e.h - 0.001) / T);
       for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++)
-        if (this.tileSolid(c, r)) out.push({ x: c * T, y: r * T, w: T, h: T });
+        if (this.tileSolid(c, r, e)) out.push({ x: c * T, y: r * T, w: T, h: T });
       return out;
     }
 
@@ -191,7 +210,32 @@
         cat.dx = cat.x - x0; cat.dy = cat.y - y0;
 
         for (const f of this.fish) if (!f.got && overlap(cat, f)) { f.got = true; this.events.push(['fish', cat.id]); }
+        // action button: levers & colour switches
+        const ap = inp.a && !cat.aprev; cat.aprev = !!inp.a;
+        if (ap) {
+          for (const L of this.levers) if (overlap(cat, L)) { this.leverOn = !this.leverOn; this.events.push(['lever', cat.id, this.leverOn ? 1 : 0]); }
+          for (const S of this.switches) if (overlap(cat, S)) { this.swapped = !this.swapped; this.events.push(['swap', cat.id]); this.unstick(); }
+        }
+        // springs bounce whoever lands on them
+        for (const sp of this.springs) if (cat.onGround && overlap(cat, { x: sp.x, y: sp.y - 2, w: sp.w, h: 12 }) && cat.y + cat.h <= sp.y + 12) {
+          cat.vy = -(this.P.springVelocity || 760); cat.onGround = false; cat.launched = true; sp.t = 0.25; this.events.push(['boing', cat.id]);
+        }
+        // conveyors carry cats standing on them
+        if (cat.onGround && cat.standOn === 'tile') {
+          const r = Math.floor((cat.y + cat.h + 1) / T), cx = Math.floor((cat.x + cat.w / 2) / T);
+          if (r >= 0 && r < this.rows && this.grid[r] && this.grid[r][cx] === 5) {
+            const cv = this.convs.find(v => v.c === cx && v.r === r);
+            this.moveCatX(cat, cv.dir * this.convDir * (this.P.conveyorSpeed || 100) * DT);
+          }
+        }
+        // water: splash back to the start
+        for (const w of this.water) if (overlap(cat, w)) { this.respawnCat(cat); this.events.push(['splash', cat.id]); break; }
       }
+      // conveyor timing
+      if (this.flipConv && this.convs.length) { this.convT += DT; if (this.convT > 3) { this.convT = 0; this.convDir *= -1; this.events.push(['conv']); } }
+      for (const sp of this.springs) sp.t = Math.max(0, sp.t - DT);
+      for (const pd of this.pads) pd.t = Math.max(0, pd.t - DT);
+      if (this.boss) this.stepBoss();
       this.updateSwitches();
 
       if (!this.goal) return;
@@ -204,19 +248,63 @@
       if (!this.cleared && this.goalTimer > 0.35) { this.cleared = true; this.events.push(['clear']); }
     }
 
+    respawnCat(cat) { cat.x = cat.spawnX; cat.y = cat.spawnY; cat.vx = 0; cat.vy = 0; cat.stun = 0.3; cat.onGround = false; cat.standOn = null; }
+    // after a colour swap, a cat stuck inside a now-solid block pops up on top of it
+    unstick() {
+      for (const cat of this.cats) for (let k = 0; k < 3; k++) { const h = this.hitTiles(cat); if (!h.length) break; cat.y = Math.min(...h.map(t => t.y)) - cat.h; cat.vy = 0; }
+    }
+    stepBoss() {
+      const b = this.boss;
+      b.hitT = Math.max(0, b.hitT - DT);
+      if (b.hp <= 0) { b.y += 0; return; }
+      if (b.stun > 0) b.stun -= DT;
+      else {
+        b.x += b.dir * b.spd * (1 + (3 - b.hp) * 0.25) * DT;
+        if (b.x < b.x0) { b.x = b.x0; b.dir = 1; }
+        if (b.x + b.w > b.x1) { b.x = b.x1 - b.w; b.dir = -1; }
+        for (const cat of this.cats) {
+          const box = { x: cat.x + 4, y: cat.y + 6, w: cat.w - 8, h: cat.h - 6 };
+          if (cat.stun <= 0 && overlap(box, b)) {
+            const dir = Math.sign(cat.x + cat.w / 2 - (b.x + b.w / 2)) || 1;
+            cat.vx = dir * 420; cat.vy = -360; cat.stun = 0.6; cat.launched = true; cat.onGround = false;
+            this.events.push(['ouch', cat.id]);
+          }
+        }
+      }
+      // both boss buttons pressed within a short window -> zap
+      const btns = this.plates.filter(p => p.ch === 'q');
+      if (btns.length && b.stun <= 0 && btns.every(p => p.lastPress != null && this.time - p.lastPress < 0.8)) {
+        b.hp--; b.stun = 2.2; b.hitT = 0.6; btns.forEach(p => p.lastPress = null);
+        this.events.push(['bosshit', b.hp]);
+        if (b.hp <= 0) this.events.push(['bossdown']);
+      }
+    }
     updateSwitches() {
       const ents = this.cats.filter(c => !c.dead).concat(this.boxes);
       const open = {};
       for (const p of this.plates) {
         const was = p.pressed;
         p.pressed = ents.some(e => overlap(e, p));
-        if (p.pressed && !was) this.events.push(['plate', 1]);
-        if (p.pressed) open[p.ch] = true;
+        if (p.pressed && !was) {
+          this.events.push(['plate', 1]);
+          p.lastPress = this.time;
+          if (p.ch === 'p') for (const pd of this.pads) for (const cat of this.cats) {
+            if (overlap(cat, { x: pd.x, y: pd.y - 4, w: pd.w, h: 14 })) { cat.vy = -(this.P.launchVelocity || 900); cat.onGround = false; cat.launched = true; cat.standOn = null; pd.t = 0.4; this.events.push(['launch', cat.id]); }
+          }
+        }
+        if (p.pressed && 'abc'.includes(p.ch)) open[p.ch] = true;
+        if (p.ch === 't') { if (p.pressed) this.timer.t = this.P.timedDoor || 4; }
       }
+      const us = this.plates.filter(p => p.ch === 'u');
+      if (us.length && !this.latch.u && us.every(p => p.pressed)) { this.latch.u = true; this.events.push(['latch']); }
+      if (this.latch.u) open.u = true;
+      if (this.timer.t > 0) { this.timer.t -= DT; open.t = true; }
+      if (this.boss && this.boss.hp <= 0) open.q = true;
       for (const d of this.doors) {
         const occupied = ents.some(e => overlap(e, d));
         const wasSolid = d.solid;
         d.solid = !open[d.ch] && !occupied;
+        if (d.ch === 'q' && !open.q) d.solid = true;
         if (wasSolid && !d.solid && d === this.doors.find(x => x.ch === d.ch)) this.events.push(['door', 1]);
         d.open += ((d.solid ? 0 : 1) - d.open) * 0.3;
       }
@@ -235,6 +323,10 @@
         p: this.plates.map(p => p.pressed ? 1 : 0),
         f: this.fish.map(f => f.got ? 1 : 0),
         g: this.goalTimer > 0 ? 1 : 0,
+        k: this.leverOn ? 1 : 0, sw: this.swapped ? 1 : 0, cd: this.convDir,
+        tt: this.timer.t > 0 ? Math.ceil(this.timer.t) : 0,
+        sp: this.springs.map(s => s.t > 0 ? 1 : 0), pd: this.pads.map(s => s.t > 0 ? 1 : 0),
+        bo: this.boss ? [r1(this.boss.x), r1(this.boss.y), this.boss.dir, this.boss.hp, this.boss.stun > 0 ? 1 : 0, this.boss.hitT > 0 ? 1 : 0] : null,
       };
     }
   }

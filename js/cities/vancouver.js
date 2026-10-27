@@ -1,0 +1,56 @@
+// Vancouver — compact config. Right-hand traffic. SkyTrain Canada Line, Waterfront → Richmond–Brighouse
+// main branch (13 stations; the YVR–Airport branch splits at Bridgeport). Cafés and hotels are fictional.
+Cities.quick({
+  id: 'vancouver', name: '温哥华', local: 'Vancouver', drive: 'R',
+  blurb: '雪山、海港、煤气镇的蒸汽钟和耶鲁镇的红砖仓库；下雨天也很温柔。',
+  palette: ['#6a7a8a', '#8a9aa8', '#b8c0c8', '#5a4a3a', '#8a5a4a'], styles: ['glass', 'condo', 'brick'],
+  shops: ['cafe', 'bakery', 'books', 'ramen', 'grocery', 'flowers', 'gift'],
+  shopNames: { cafe: ['Rainy Day Coffee', 'Harbour Cat Café'], bakery: ['Maple Paw Bakery'], books: ['Drizzle Books'], ramen: ['Ramen Kumo'], grocery: ['Salmon & Sprout'], flowers: ['Cherry Lane Florist'], gift: ['Totem Gifts'] },
+  signs: { welcome: 'Welcome to Vancouver', exit: 'Exit / Sortie', reception: 'Front Desk', towards: 'To', boarding: 'Platform', shop: { cafe: 'Coffee', books: 'Books', grocery: 'Market', bakery: 'Bakery', ramen: 'Ramen', flowers: 'Flowers', gift: 'Gifts' } },
+  taxi: '#e8e8ee', streetSign: { bg: '#2a4a6a', fg: '#fff' },
+  ann: { next: 'Next station:', arr: 'Now arriving at', end: 'This is the final stop' },
+  items: { cafe: [['伦敦雾奶茶', 2], ['枫糖拿铁', 2]], bakery: [['纳奈莫条', 1], ['枫糖饼干', 1]], gift: [['三文鱼干', 3], ['枫叶围巾', 3]] },
+  views: {
+    harbour: { id: 'va-harbour', horizon: .64, water: true, mountains: true, skyline: { far: { hMax: 30, kinds: ['condo'] }, mid: { hMax: 70, hMin: 30, kinds: ['glass', 'glass', 'condo'] }, near: false }, near: false,
+      movers: [{ k: 'boat', y: .86 }, { k: 'sail', y: .84 }, { k: 'birds', y: .3 }] },
+    gastown: { id: 'va-gastown', horizon: .76, mountains: true, skyline: { far: { hMax: 60, kinds: ['glass', 'condo'] }, mid: { hMax: 34, hMin: 16, kinds: ['brick', 'old'] }, near: { kinds: ['brick', 'old'] } },
+      landmarks: [{ k: 'clocktower', x: .55, depth: .5 }], movers: [{ k: 'cars', side: 'R', n: 3 }, { k: 'birds', y: .3 }] },
+    yaletown: { id: 'va-yaletown', horizon: .7, water: true, mountains: true, skyline: { far: { hMax: 80, kinds: ['glass', 'condo'] }, mid: { hMax: 60, hMin: 20, kinds: ['glass', 'condo', 'brick'] }, near: false }, near: false, movers: [{ k: 'boat', y: .86 }, { k: 'geese', y: .3 }] },
+  },
+  hotels: [
+    { id: 'harbour', name: '海港景观酒店', area: 'downtown', x: 1100, room: 'condo', roomName: '海景房', view: 'harbour', floor: 22, tip: '推荐',
+      desc: '玻璃大楼的高层，窗外是海港、水上飞机和对岸的雪山。' },
+    { id: 'loft', name: '煤气镇砖墙旅馆', area: 'gastown', x: 1000, room: 'loft', roomName: '红砖阁楼', view: 'gastown', floor: 3,
+      desc: '百年红砖楼改的小旅馆，窗外是石板路和煤气灯。', lobby: { wall: '#8a5a4a', uniform: '#2a2a2a' }, hall: { wall: '#7a4a3a', carpet: '#3a4a3a', door: '#2a2a2a' } },
+  ],
+  areas: [
+    { id: 'gastown', name: '煤气镇', view: 'gastown', start: 500, bench: 1300, benchName: '石板路边的长椅',
+      street: { len: 7, cross: [3], names: ['Water St'], label: 'Water St', styles: ['brick', 'old'], road: '#6a625a', shops: ['cafe', 'gift', 'books', 'bakery'], trees: true },
+      sign: [1500, '煤气镇：温哥华最早的街区，石板路上有一座会冒蒸汽的钟。'] },
+    { id: 'downtown', name: '市中心 · 海港', view: 'harbour', start: 400, bench: 700, benchName: '海港步道的长椅',
+      street: { len: 7, cross: [2, 5], names: ['Georgia St', 'Burrard St'], label: 'Granville St', styles: ['glass', 'condo'], shops: ['cafe', 'ramen', 'grocery', 'books', 'flowers'], trees: true },
+      lib: [1400, '图书馆中庭', 'library'] },
+    { id: 'yaletown', name: '耶鲁镇 · 福溪', view: 'yaletown', start: 400, bench: 1200, benchName: '海堤步道长椅',
+      street: { len: 6, cross: [2], names: ['Mainland St'], label: 'Hamilton St', styles: ['brick', 'condo', 'glass'], shops: ['cafe', 'bakery', 'flowers', 'grocery'], trees: true },
+      sign: [700, '耶鲁镇的红砖仓库以前是铁路货仓，现在是咖啡店和餐厅。'] },
+  ],
+  lines: [
+    { id: 'can', name: 'SkyTrain 加拿大线', short: 'Canada', color: '#0098c7', body: '#e4e6ea', car: 'metro',
+      st: ['Waterfront|海滨站@gastown:300', 'Vancouver City Centre|温哥华市中心@downtown:300', 'Yaletown–Roundhouse|耶鲁镇-圆屋@yaletown:300', 'Olympic Village|奥运村', 'Broadway–City Hall|百老汇-市政厅', 'King Edward|爱德华国王', 'Oakridge–41st Avenue|橡树岭-41 街', 'Langara–49th Avenue|兰加拉-49 街', '^Marine Drive|马林道', '^Bridgeport|布里奇波特', '^Aberdeen|阿伯丁', '^Lansdowne|兰斯当', '^Richmond–Brighouse|列治文-布里格豪斯'] },
+  ],
+  routes: [
+    ['煤气镇 → 耶鲁镇', '加拿大线往南两站。', [['can', 'Waterfront', 'Yaletown–Roundhouse']]],
+    ['去列治文吃夜市', '加拿大线一路往南，过了马林道就出地面上桥。', [['can', 'Waterfront', 'Richmond–Brighouse']]],
+    ['市中心 → 奥运村', '坐到奥运村，在福溪边散步。', [['can', 'Vancouver City Centre', 'Olympic Village']]],
+  ],
+  acts: [
+    { id: 'clock', name: '蒸汽钟合影', area: 'gastown', x: 800, icon: 'star', kind: 'photo', tod: 'golden', intro: '蒸汽钟要鸣笛了！让它进框，两只猫靠在一起按 ↑。', real: '煤气镇蒸汽钟建于 1977 年，每 15 分钟会鸣响一次。', cfg: { target: .55, lmName: '蒸汽钟', n: 4 } },
+    { id: 'rain', name: '雨天接樱花', area: 'downtown', x: 1000, icon: 'flower', kind: 'collect', tod: 'day', intro: '春雨里樱花飘下来了！一起接住花瓣。', real: '温哥华春天有成千上万棵樱花树，雨也很多。', cfg: { fall: true, items: ['flower', 'flower', 'leaf'], max: 6 } },
+    { id: 'kayak', name: '福溪划船', area: 'yaletown', x: 1000, icon: 'ticket', kind: 'paddle', tod: 'golden', time: 50, intro: '一起在福溪上划小船，节奏一致就越划越快。', real: '福溪（False Creek）两岸是海堤步道，可以划船、骑车。', cfg: { goal: 650, vmax: 80, boatColor: '#d8a020' } },
+    { id: 'sushi', name: '三文鱼寿司', area: 'downtown', x: 1250, icon: 'fish', kind: 'order', tod: 'night', intro: '温哥华的寿司又便宜又好吃！照着清单拿。', real: '加州卷据说就是在温哥华发明的（也有说在洛杉矶）。',
+      cfg: { listTitle: '想吃的', n: 5, pool: [['三文鱼', 'fish'], ['加州卷', 'star'], ['味噌汤', 'cup'], ['毛豆', 'leaf'], ['抹茶', 'cup'], ['天妇罗', 'fish']] } },
+  ],
+  map: { land: '#d8dccc', water: [[0, 0, 100, 18], [30, 46, 40, 8]], parks: [[10, 20, 14, 14]],
+    lines: { can: [[50, 22], [50, 36], [50, 46], [52, 60], [54, 80], [56, 98]] },
+    labels: [[60, 10, '布勒内湾', '#3a6a9a'], [72, 50, '福溪', '#3a6a9a']], areas: { gastown: [58, 22], downtown: [44, 32], yaletown: [56, 44] } },
+});

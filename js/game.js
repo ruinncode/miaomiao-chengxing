@@ -22,9 +22,10 @@
 
   // ---------------------------------------------------------- co-op game (host/local only)
   class CoopGame {
-    constructor() { this.sim = new Sim(0, LEVELS, CFG.physics); this.phase = 'play'; this.t = 0; this.k = 0; this.fishTotal = 0; this.events = []; }
+    constructor(start = 0) { this.sim = new Sim(start, LEVELS, CFG.physics); this.phase = 'intro'; this.t = 0; this.k = 0; this.fishTotal = 0; this.events = []; }
     step(inputs) {
       const sim = this.sim;
+      if (this.phase === 'intro') { sim.step([{}, {}]); sim.takeEvents(); this.t += DT; if (this.t > 2.2) { this.phase = 'play'; this.t = 0; } return; }
       if (this.phase === 'play') {
         sim.step(inputs);
         for (const e of sim.takeEvents()) this.events.push(e);
@@ -33,27 +34,52 @@
         sim.step([{}, {}]); sim.takeEvents(); this.t += DT;
         if (this.phase === 'clear' && this.t > 2.6) {
           if (sim.levelIndex + 1 >= LEVELS.length) { this.phase = 'end'; this.events.push(['ending']); }
-          else { sim.load(sim.levelIndex + 1); this.k++; this.phase = 'play'; this.events.push(['level', sim.levelIndex]); }
+          else { sim.load(sim.levelIndex + 1); this.k++; this.phase = 'intro'; this.t = 0; this.events.push(['level', sim.levelIndex]); }
         }
       }
     }
-    restart() { if (this.phase !== 'play') return; this.sim.load(this.sim.levelIndex); this.k++; this.events.push(['restart']); }
+    restart() { if (this.phase !== 'play' && this.phase !== 'intro') return; this.sim.load(this.sim.levelIndex); this.k++; this.events.push(['restart']); }
     takeEvents() { const e = this.events; this.events = []; return e; }
-    snapshot() { return Object.assign(this.sim.snapshot(), { ph: this.phase, k: this.k, ft: this.fishTotal }); }
+    snapshot() { return Object.assign(this.sim.snapshot(), { ph: this.phase, k: this.k, ft: this.fishTotal, it: Math.round(this.t * 10) / 10 }); }
   }
 
   // ---------------------------------------------------------- session (what is being played)
+  // Affection (works in every mode): hug = both press ♥ within a short window while close.
+  const HUG = { range: 64, window: 2.5, dur: 1.9 };
   class Session {
-    constructor() { this.mode = 'pick'; this.mk = 0; this.game = null; this.events = []; }
-    setMode(m) {
-      this.mode = m; this.mk++;
-      this.game = m === 'coop' ? new CoopGame() : m === 'vs' ? new VsMatch(CFG.physics, (Date.now() % 1e6) | 0) : null;
+    constructor() { this.mode = 'pick'; this.mk = 0; this.game = null; this.events = []; this.hug = null; this.ask = null; this.nuz = [0, 0]; }
+    setMode(m, arg) {
+      this.mk++; this.hug = null; this.ask = null;
+      if (typeof m === 'string' && m.startsWith('hub:')) { this.mode = 'hub'; this.game = Hub.create(m.slice(4), arg, this); }
+      else { this.mode = m; const o = arg && typeof arg === 'object' ? arg : {}; this.game = m === 'coop' ? new CoopGame((o.lv != null ? o.lv : arg) | 0) : m === 'vs' ? new VsMatch(CFG.physics, (Date.now() % 1e6) | 0, o.only ? { order: [o.only], need: 2 } : {}) : null; }
       this.events.push(['mode', m]);
     }
-    step(inputs) { if (!this.game) return; this.game.step(inputs); this.events.push(...this.game.takeEvents()); }
-    snapshot() { return this.game ? this.game.snapshot() : null; }
+    catsPos() { const sn = this.game && this.game.snapshot(); return sn && sn.c; }
+    hugPress(who) {
+      if (this.hug) return;
+      const c = this.catsPos(); if (!c || !c[0] || !c[1]) return;
+      const close = Math.abs(c[0][0] - c[1][0]) < HUG.range && Math.abs(c[0][1] - c[1][1]) < 40;
+      if (!close) { this.events.push(['hugfar', who]); return; }
+      if (this.ask && this.ask.who !== who) { this.ask = null; this.hug = { t: 0, x: (c[0][0] + c[1][0]) / 2, l: c[0][0] <= c[1][0] ? 0 : 1 }; this.events.push(['hug', who]); if (this.game && this.game.onHug) this.game.onHug(); }
+      else { this.ask = { who, t: HUG.window }; this.events.push(['hugask', who]); }
+    }
+    nuzzle(who) { this.nuz[who] = 1.0; this.events.push(['nuzzle', who]); }
+    act(a, who) { if (this.game && this.game.act) this.game.act(a, who); }
+    step(inputs) {
+      if (!this.game) return;
+      if (this.ask && (this.ask.t -= DT) <= 0) { this.ask = null; this.events.push(['hugmiss']); }
+      if (this.hug) { this.hug.t += DT; inputs = [{}, {}]; if (this.hug.t >= HUG.dur) this.hug = null; }
+      for (let i = 0; i < 2; i++) if (this.nuz[i] > 0) this.nuz[i] -= DT;
+      this.game.step(inputs); this.events.push(...this.game.takeEvents());
+    }
+    snapshot() {
+      const s = this.game ? this.game.snapshot() : null; if (!s) return s;
+      if (this.hug || this.ask || this.nuz[0] > 0 || this.nuz[1] > 0) s.af = [this.hug ? Math.round(this.hug.t * 100) / 100 : -1, this.hug ? this.hug.l : -1, this.ask ? this.ask.who : -1, this.nuz[0] > 0 ? 1 : 0, this.nuz[1] > 0 ? 1 : 0, this.hug ? this.hug.x : 0];
+      return s;
+    }
     takeEvents() { const e = this.events; this.events = []; return e; }
   }
+  window.HUG = HUG;
 
   // ---------------------------------------------------------- input
   const keys = new Set();
@@ -79,8 +105,8 @@
   function onKeyPress(code) {
     if (!App.role || App.role === 'menu') return;
     if (code === 'KeyR') App.restart();
-    if (App.role === 'local') { if (code === 'KeyE') App.meow(0); if (code === 'KeyM') App.meow(1); }
-    else if (code === 'KeyE' || code === 'KeyM') App.meow(App.me);
+    if (App.role === 'local') { if (code === 'KeyE') App.meow(0); if (code === 'KeyM') App.meow(1); if (code === 'KeyQ') App.hug(0); if (code === 'KeyN') App.hug(1); if (code === 'KeyZ') App.nuzzle(0); if (code === 'KeyB') App.nuzzle(1); }
+    else { if (code === 'KeyE' || code === 'KeyM') App.meow(App.me); if (code === 'KeyH' || code === 'KeyQ') App.hug(App.me); if (code === 'KeyZ' || code === 'KeyB') App.nuzzle(App.me); }
   }
   function setupTouch() {
     const isTouch = ('ontouchstart' in window) || matchMedia('(pointer: coarse)').matches || qs.has('touch');
@@ -91,6 +117,7 @@
         e.preventDefault(); Sfx.unlock(); b.classList.add('down');
         if (k === 'meow') App.meow(App.role === 'local' ? 0 : App.me);
         else if (k === 'restart') App.restart();
+        else if (k === 'hug') App.hug(App.role === 'local' ? 0 : App.me);
         else touch[k] = true;
       };
       const up = (e) => { e.preventDefault(); b.classList.remove('down'); if (k in touch) touch[k] = false; };
@@ -199,8 +226,11 @@
     modeScreen() {
       const host = this.role !== 'guest';
       $('btn-mode-coop').disabled = !host; $('btn-mode-vs').disabled = !host;
+      try { const T = JSON.parse(localStorage.getItem('mmcx-tally') || '{}'); $('tally').textContent = (T.coop || T.vs) ? `这次一起玩：闯关 ${T.coop || 0} 次 · 对战 ${SHORT[0]} ${(T.w || [0, 0])[0]} : ${(T.w || [0, 0])[1]} ${SHORT[1]}` : ''; } catch (e) {}
+      const back = this.session && this.session.stash ? '回到' + (this.session.stash.label || '旅行') : '换个玩法';
+      $('btn-end-mode').textContent = back; $('btn-vs-mode').textContent = back;
       $('mode-wait').classList.toggle('hidden', host);
-      $('mode-sub').textContent = this.role === 'local' ? `同一台设备：${NAMES[0]}（黑猫）用 WASD，${NAMES[1]}（白猫）用方向键` : (host ? `${BOTH} 都到齐啦！你来选：` : `${BOTH} 都到齐啦！`);
+      $('mode-sub').textContent = this.role === 'local' ? `同一台设备：${NAMES[0]}（黑猫）用 WASD，${NAMES[1]}（虎斑猫）用方向键` : (host ? `${BOTH} 都到齐啦！你来选：` : `${BOTH} 都到齐啦！`);
       document.querySelectorAll('.host-only').forEach(b => b.classList.toggle('hidden', !host));
     },
     pickMode(m) {
@@ -212,9 +242,18 @@
       if (this.role === 'guest') { this.net && this.net.send({ t: 'again' }); return; }
       if (this.session && this.session.mode !== 'pick') { this.session.setMode(this.session.mode); this.sendState(true); }
     },
+    // play a platformer mini-game from inside a hub mode (hotel TV, handheld, 小游戏厅); when it ends,
+    // backToModes() returns to the stashed hub state (e.g. the hotel room) instead of the menu.
+    playFrom(m, arg, stash) {
+      if (this.role === 'guest' || !this.session) return;
+      this.session.stash = stash || null; Sfx.click(); this.session.setMode(m, arg); this.sendState(true);
+    },
     backToModes() {
       if (this.role === 'guest' || !this.session) return;
-      Sfx.click(); this.session.mode = 'pick'; this.session.mk++; this.session.game = null; this.sendState(true);
+      const sh = this.session.stash;
+      if (sh && this.session.mode !== 'hub') { this.session.stash = null; Sfx.click(); this.session.setMode('hub:' + sh.name, { _restore: sh.st }); this.sendState(true); return; }
+      this.session.stash = null;
+      Sfx.click(); this.session.mode = 'pick'; this.session.mk++; this.session.game = null; this.session.hug = null; this.sendState(true);
     },
     restart() {
       const now = performance.now(); if (now - this.lastRestart < 400) return; this.lastRestart = now;
@@ -226,6 +265,24 @@
       if (this.role === 'guest') { this.net && this.net.send({ t: 'meow' }); return; }
       if (this.session) this.session.events.push(['meow', i]);
     },
+    hug(i) {
+      if (this.role === 'guest') { this.net && this.net.send({ t: 'hug' }); return; }
+      if (this.session && this.session.game) this.session.hugPress(i);
+    },
+    nuzzle(i) {
+      if (this.role === 'guest') { this.net && this.net.send({ t: 'nuz' }); return; }
+      if (this.session && this.session.game) this.session.nuzzle(i);
+    },
+    // generic action for hub modes (study, travel, minigames…). who defaults to me.
+    act(a, who) {
+      if (this.role === 'guest') { this.net && this.net.send({ t: 'act', a }); return; }
+      if (this.session) { this.session.act(a, who == null ? this.me : who); this.sendState(true); }
+    },
+    pickHub(h) {
+      if (!this.session) return;
+      if (this.role === 'guest') { this.net && this.net.send({ t: 'hubpick', h }); return; }
+      Sfx.click(); this.session.setMode('hub:' + h); this.sendState(true);
+    },
     hostMsg(m) {
       if (!m) return;
       if (m.t === 'i') {
@@ -233,6 +290,10 @@
         if (m.a && !this.remote.a) this.rTapA = true;
         this.remote = { l: !!m.l, r: !!m.r, j: !!m.j, d: !!m.d, a: !!m.a };
       } else if (m.t === 'restart') this.restart();
+      else if (m.t === 'hug') this.session && this.session.hugPress(1);
+      else if (m.t === 'nuz') this.session && this.session.nuzzle(1);
+      else if (m.t === 'act') this.session && this.session.act(m.a, 1);
+      else if (m.t === 'hubpick' && this.session && this.session.mode === 'pick') { this.session.setMode('hub:' + m.h); this.sendState(true); }
       else if (m.t === 'meow') this.session.events.push(['meow', 1]);
       else if (m.t === 'again') { const ph = this.session.snapshot(); if (ph && (ph.ph === 'end' || ph.ph === 'matchEnd')) this.again(); }
     },
@@ -305,10 +366,11 @@
       if (b.s.b) s.b = lerpArr(a.s.b, b.s.b, 2);
       if (b.s.v) s.v = lerpArr(a.s.v, b.s.v, 2);
       if (b.s.cu) s.cu = lerpArr(a.s.cu, b.s.cu, 2);
+      if (b.m === 'hub' && a.s.sc !== b.s.sc) s.c = b.s.c;
       return { m: b.m, mk: b.mk, s };
     },
   };
-  window.App = App;
+  window.App = App; window.GameUI = { banner, show, esc, get screen() { return curScreen; } };
 
   // ---------------------------------------------------------- Phaser scene
   let Scene = null;
@@ -323,31 +385,36 @@
   class MainScene extends Phaser.Scene {
     constructor() { super('main'); }
     create() {
-      Scene = this;
+      Scene = this; App.scene = this;
       Art.build(this);
       fillSprites(this);
       this.staticLayer = this.add.layer().setDepth(0);
       this.pools = {};
-      this.catAnim = [0, 1].map(() => ({ nextBlink: 1 + Math.random() * 3, blinkT: 0, label: null }));
-      this.cats = [0, 1].map(i => this.add.image(0, 0, `cat${i}_idle0`).setScale(2).setOrigin(0.5, 15 / 16).setDepth(6));
+      this.catAnim = [0, 1].map(() => ({ nextBlink: 1 + Math.random() * 3, blinkT: 0, label: null, idle: 0, wasGround: true, landT: 0, meowT: 0 }));
+      this.cats = [0, 1].map(i => this.add.image(0, 0, `cat${i}_idle0`).setScale(2).setOrigin(CatArt.ANCHOR.x, CatArt.ANCHOR.y).setDepth(6));
       this.catFx = [0, 1].map(() => ({
         swipe: this.add.image(0, 0, 'swipe').setScale(2).setDepth(7).setVisible(false),
         star: this.add.image(0, 0, 'star').setScale(2).setDepth(7).setVisible(false),
         yarn: this.add.image(0, 0, 'yarn').setScale(2).setDepth(7).setVisible(false),
         ring: this.add.image(0, 0, 'ring').setScale(2).setDepth(7).setVisible(false),
+        ask: this.add.image(0, 0, 'heart').setScale(2).setDepth(9).setVisible(false),
       }));
       this.catFx.forEach((fx, i) => { fx.tag = this.makeNameTag(i); });
       this.fx = this.add.layer().setDepth(8);
       // HUD
       const hud = this.hud = {};
       hud.title = this.add.text(16, 6, '', this.ts(24)).setDepth(20);
-      hud.hint = this.add.text(W / 2, 46, '', this.ts(12, '#3a2e4f', '#ffffffcc')).setOrigin(0.5, 0).setDepth(20).setPadding(8, 4, 8, 4);
+      hud.hint = this.add.text(W / 2, 46, '', this.ts(12, '#e8e4f0', '#222b3de6')).setOrigin(0.5, 0).setDepth(20).setPadding(8, 4, 8, 4);
       hud.fishIcon = this.add.image(W - 132, 20, 'fish').setScale(2).setDepth(20);
       hud.fish = this.add.text(W - 112, 6, '', this.ts(24)).setDepth(20);
       hud.net = this.add.text(12, H - 22, '', this.ts(12, '#ffffff')).setDepth(20).setAlpha(0.8);
+      hud.card = this.add.graphics().setDepth(20.5);
+      hud.topbar = this.add.graphics().setDepth(19);
+      hud.topbar.fillStyle(0x0d0f17, 0.55).fillRect(0, 0, W, 34).fillStyle(0x3a4763, 0.8).fillRect(0, 34, W, 2);
+      this.amb = Array.from({ length: 14 }, () => this.add.image(0, 0, 'firefly').setScale(2).setDepth(7.5).setVisible(false));
       hud.big = this.add.text(W / 2, H / 2 - 60, '', this.ts(48, '#ffffff')).setOrigin(0.5).setDepth(21);
       hud.sub = this.add.text(W / 2, H / 2 + 4, '', this.ts(24, '#ffffff')).setOrigin(0.5).setDepth(21);
-      hud.sub2 = this.add.text(W / 2, H / 2 + 44, '', this.ts(12, '#3a2e4f', '#fff6facc')).setOrigin(0.5).setDepth(21).setPadding(8, 4, 8, 4);
+      hud.sub2 = this.add.text(W / 2, H / 2 + 44, '', this.ts(12, '#e8e4f0', '#222b3de6')).setOrigin(0.5).setDepth(21).setPadding(8, 4, 8, 4);
       hud.center = this.add.text(W / 2, 6, '', this.ts(24)).setOrigin(0.5, 0).setDepth(20);
       hud.timer = this.add.text(W / 2, 34, '', this.ts(24, '#fff07a')).setOrigin(0.5, 0).setDepth(20);
       hud.side = [0, 1].map(i => ({
@@ -379,7 +446,7 @@
     }
     ts(size, color = '#ffffff', bg) {
       const o = { fontFamily: FONT, fontSize: size + 'px', color, resolution: 1 };
-      if (bg) o.backgroundColor = bg; else o.shadow = { offsetX: size >= 24 ? 2 : 1, offsetY: size >= 24 ? 2 : 1, color: '#3a2e4f', blur: 0, fill: true };
+      if (bg) o.backgroundColor = bg; else o.shadow = { offsetX: size >= 24 ? 2 : 1, offsetY: size >= 24 ? 2 : 1, color: '#0d0f17', blur: 0, fill: true };
       return o;
     }
     // ----- attract mode on the title screen
@@ -406,13 +473,13 @@
       this.viewKey = key;
       this.staticLayer.removeAll(true);
       Object.values(this.pools).forEach(p => p.forEach(s => s.destroy())); this.pools = {};
-      this.staticLayer.add(this.add.image(0, 0, 'bg_' + theme).setOrigin(0).setScale(2));
-      const wall = (r, c) => r >= 0 && r < map.length && map[r][c] === '#';
-      for (let r = 0; r < map.length; r++) for (let c = 0; c < map[r].length; c++) {
-        const ch = map[r][c];
-        if (ch === '#') this.staticLayer.add(this.add.image(c * T, r * T, `t_${theme}_${(r > 0 && !wall(r - 1, c)) ? 'top' : 'fill'}`).setOrigin(0).setScale(2));
-        else if (ch === '=') this.staticLayer.add(this.add.image(c * T, r * T, `t_${theme}_plank`).setOrigin(0).setScale(2));
-      }
+      this.theme = theme;
+      this.bgL = [0, 1, 2].map(k => { const im = this.add.image(-40, 0, `bg_${theme}_${k}`).setOrigin(0).setScale(2); this.staticLayer.add(im); return im; });
+      if (this.lvlTex && this.textures.exists(this.lvlTex)) this.textures.remove(this.lvlTex);
+      this.lvlTex = 'lvl_' + (this.lvlN = (this.lvlN || 0) + 1);
+      Art.drawLevel(this, this.lvlTex, map, theme);
+      this.staticLayer.add(this.add.image(0, 0, this.lvlTex).setOrigin(0).setScale(2));
+      this.cameras.main.fadeIn(260, 13, 15, 23);
       this.coopInfo = null;
       if (coopLv != null) {
         const s = new Sim(coopLv, LEVELS, CFG.physics);
@@ -434,6 +501,25 @@
         s.fish.forEach(f => { const img = this.add.image(f.x + 10, f.y + 8, 'fish').setScale(2).setDepth(4); this.staticLayer.add(img); info.fish.push({ img, y: f.y + 8 }); });
         s.boxes.forEach(() => { const img = this.add.image(0, 0, 'box').setOrigin(0).setScale(2).setDepth(5); this.staticLayer.add(img); info.boxes.push(img); });
         info.total = s.fish.length;
+        const im = (x, y, tex, d = 3) => { const o = this.add.image(x, y, tex).setOrigin(0).setScale(2).setDepth(d); this.staticLayer.add(o); return o; };
+        info.levers = s.levers.map(L => im(L.c * T, L.r * T, 'lever0'));
+        info.switches = s.switches.map(L => im(L.c * T, L.r * T, 'xswitch0'));
+        info.bridges = s.bridges.map(b => im(b.c * T, b.r * T, 'bridge'));
+        info.springs = s.springs.map(b => im(b.c * T, (b.r + 1) * T - 16, 'spring'));
+        info.pads = s.pads.map(b => im(b.c * T, (b.r + 1) * T - 16, 'launch0'));
+        info.convs = s.convs.map(b => ({ img: im(b.c * T, b.r * T, 'conv0'), dir: b.dir }));
+        info.water = s.water.map(w => im(w.c * T, w.r * T, 'water0', 4));
+        info.blocks = [];
+        LEVELS[coopLv].map.forEach((row, r) => [...row].forEach((ch, c) => { if (ch === 'd' || ch === 'w') info.blocks.push({ img: im(c * T, r * T, 'cplat_d'), dark: ch === 'd' }); }));
+        info.boss = null;
+        if (s.boss) {
+          info.boss = this.add.image(0, 0, 'bossvac').setOrigin(0.5, 1).setScale(2).setDepth(5);
+          info.bossHp = [0, 1, 2, 3, 4].slice(0, s.boss.hp).map(k => this.add.image(0, 0, 'heart').setScale(2).setDepth(9));
+          this.staticLayer.add([info.boss, ...info.bossHp]);
+        }
+        info.tdoor = s.doors.find(d => d.ch === 't');
+        info.ttext = this.add.text(0, 0, '', this.ts(12, '#f3c55e')).setOrigin(0.5, 1).setDepth(9); this.staticLayer.add(info.ttext);
+
       }
     }
     pool(name, i, tex) {
@@ -450,6 +536,9 @@
       let v = App.view();
       // screens follow state
       if (App.role !== 'menu') this.syncScreens(v);
+      const hubOn = !!(v && v.s && v.m === 'hub' && App.role !== 'menu');
+      Hub.frame(hubOn ? v : null, dt);
+      if (hubOn) return;
       const inMenu = App.role === 'menu' || !v || !v.s || v.m === 'pick';
       if (inMenu) v = this.stepAttract(dt);
       // build the static view if needed
@@ -458,6 +547,7 @@
       else if (v.m === 'coop') { key = `c${v.mk}_${v.s.lv}_${v.s.k}`; map = LEVELS[v.s.lv].map; theme = LEVELS[v.s.lv].theme || 'garden'; lv = v.s.lv; }
       else { const d = VS_GAMES[v.s.gt]; key = `v${v.mk}_${v.s.rn}`; map = d.map; theme = d.theme || 'room'; }
       if (key !== this.viewKey) this.buildView(key, map, theme, lv);
+      this.parallax(v);
       this.drawCats(v);
       if (v.m === 'coop') this.drawCoop(v.s); else this.hidePool('none', 0);
       if (v.m === 'vs') this.drawVs(v.s);
@@ -465,6 +555,12 @@
       this.ambient(v, dt);
     }
 
+    parallax(v) {
+      if (!this.bgL) return;
+      const c = v.s.c.filter(Boolean); const ax = c.length ? c.reduce((a, b) => a + b[0], 0) / c.length : W / 2;
+      const p = Math.max(-0.5, Math.min(0.5, ax / W - 0.5));
+      [10, 30, 60].forEach((k, i) => { this.bgL[i].x = Math.round((-40 - p * k) / 2) * 2; });
+    }
     syncScreens(v) {
       const role = App.role;
       if (role === 'guest' && !App.guestPkt) return; // still joining
@@ -492,19 +588,30 @@
         return;
       }
       if (curScreen) show(null);
-      Sfx.music(m === 'vs' ? 'vs' : 'coop');
+      Sfx.music(m === 'hub' ? Hub.musicScene(v) : m === 'vs' ? 'vs' : 'coop');
     }
 
     catFrame(i, st, happy, t) {
       const a = this.catAnim[i];
       const [x, y, vx, vy, ground, face, flags = 0] = st;
-      if (flags & 2) return 'dizzy';
-      if (happy) return (t % 0.6 < 0.3) ? 'happy' : 'happy2';
-      if (!ground) return 'jump';
-      if (Math.abs(vx) > 25) return 'walk' + (Math.floor(t * 10) % 4);
-      a.nextBlink -= 1 / 60;
+      const dt = 1 / 60;
+      if (ground && !a.wasGround) a.landT = 0.12; a.wasGround = !!ground; a.landT -= dt; a.meowT -= dt;
+      if (flags & 2) return 'dizzy' + (Math.floor(t * 6) % 2);
+      if (flags & 16) return 'swipe';
+      if (happy) return (t % 0.6 < 0.3) ? 'happy0' : 'happy1';
+      if (!ground) { a.idle = 0; return vy < -160 ? 'jump' : vy > 160 ? 'fall' : 'leap'; }
+      if (a.landT > 0) return 'land';
+      if (Math.abs(vx) > 25) { a.idle = 0; return Math.abs(vx) > 170 ? 'run' + (Math.floor(t * 12) % 4) : 'walk' + (Math.floor(t * 12) % 6); }
+      if (a.meowT > 0) return 'meow';
+      a.idle += dt;
+      a.nextBlink -= dt;
       if (a.nextBlink <= 0) { a.blinkT = 0.15; a.nextBlink = 2 + Math.random() * 3; }
-      if (a.blinkT > 0) { a.blinkT -= 1 / 60; return 'blink'; }
+      const blink = a.blinkT > 0; if (blink) a.blinkT -= dt;
+      if (a.idle > 14) return 'sleep' + (Math.floor(t * 1.2) % 2);
+      if (a.idle > 9) return 'loaf';
+      if (a.idle > 4) return blink ? 'sitBlink' : 'sit';
+      if (blink) return 'blink';
+      if (a.idle > 2.5 && Math.floor(t / 2) % 3 === 1) return 'look';
       return (t % 1.4 < 0.7) ? 'idle0' : 'idle1';
     }
     drawCats(v) {
@@ -514,12 +621,21 @@
         if (!st) { spr.setVisible(false); continue; }
         const flags = st[6] || 0;
         let happy = false;
-        if (v.m === 'coop') happy = s.g === 1 || s.ph !== 'play';
+        if (v.m === 'coop') happy = s.g === 1 || s.ph === 'clear' || s.ph === 'end';
         if (v.m === 'vs') happy = (s.ph === 'roundEnd' && s.rw === i) || (s.ph === 'matchEnd' && s.mw === i);
         if (v.m === 'attract') happy = false;
-        const fr = this.catFrame(i, st, happy, t + i * 0.37);
-        spr.setTexture(`cat${i}_${fr}`).setFlipX(st[5] < 0).setVisible(!(flags & 1));
-        spr.setPosition(Math.round(st[0] + 13), Math.round(st[1] + 24));
+        let fr = this.catFrame(i, st, happy, t + i * 0.37);
+        const af = s.af; let face = st[5], px = st[0] + 13, sx = 2, sy = 2;
+        if (af && af[3 + i]) fr = 'nuzzle';
+        if (af && af[0] >= 0) { // hug: lock together, face each other, gentle squeeze
+          const left = af[1] === i; fr = af[0] > 1.5 ? 'happy1' : 'hug'; face = left ? 1 : -1; px = af[5] + 13 + (left ? -11 : 11);
+          const q = Math.sin(Math.min(1, af[0] / 0.35) * Math.PI) * 0.12 + Math.max(0, Math.sin(af[0] * 9)) * 0.05 * (af[0] < 1.5 ? 1 : 0);
+          sx = 2 * (1 + q * 0.6); sy = 2 * (1 - q * 0.5);
+          if (i === 0 && Math.floor(af[0] * 6) !== Math.floor((af[0] - 1 / 60) * 6)) this.spawnHeart(af[5] + 13, st[1] - 6, 1);
+        }
+        spr.setTexture(`cat${i}_${fr}`).setFlipX(face < 0).setVisible(!(flags & 1)).setScale(sx, sy);
+        spr.setPosition(Math.round(px), Math.round(st[1] + 24));
+        fx.ask.setVisible(!!(af && af[2] === i)).setPosition(Math.round(px), Math.round(st[1] - 30 + Math.sin(t * 6) * 3));
         spr.setAlpha((flags & 4) && Math.floor(t * 12) % 2 ? 0.35 : 1);
         const cx = st[0] + 13, top = st[1] - 6;
         fx.swipe.setVisible(!!(flags & 16) && !(flags & 1)).setPosition(cx + st[5] * 30, st[1] + 10).setFlipX(st[5] < 0);
@@ -545,6 +661,28 @@
       info.plates.forEach((p, i) => p.img.setTexture((s.p[i] ? 'plateP_' : 'plate_') + p.ch));
       info.fish.forEach((f, i) => { f.img.setVisible(!s.f[i]); f.img.y = Math.round(f.y + Math.sin(this.time0 * 3 + i) * 2); });
       info.boxes.forEach((b, i) => { if (s.b[i]) b.setPosition(Math.round(s.b[i][0]), Math.round(s.b[i][1])); });
+      const t0 = this.time0;
+      (info.levers || []).forEach(o => o.setTexture('lever' + (s.k ? 1 : 0)));
+      (info.switches || []).forEach(o => o.setTexture('xswitch' + (s.sw ? 1 : 0)));
+      (info.bridges || []).forEach((o, i) => o.setAlpha(s.k ? 1 : 0.22 + 0.1 * Math.sin(t0 * 4 + i)));
+      (info.springs || []).forEach((o, i) => { o.setScale(2, s.sp && s.sp[i] ? 1.4 : 2); o.y = o.baseY || (o.baseY = o.y); if (s.sp && s.sp[i]) o.y = o.baseY + 4; });
+      (info.pads || []).forEach((o, i) => o.setTexture('launch' + (s.pd && s.pd[i] ? 1 : 0)));
+      const cf = Math.floor(t0 * 8) % 4;
+      (info.convs || []).forEach(o => { const d = o.dir * (s.cd || 1); o.img.setTexture('conv' + (d > 0 ? cf : 3 - cf)); });
+      (info.water || []).forEach((o, i) => o.setTexture('water' + ((Math.floor(t0 * 3) + i) % 2)));
+      const viewer = App.role === 'local' ? -1 : App.me;
+      (info.blocks || []).forEach(b => {
+        const owner = (b.dark ? 0 : 1) ^ (s.sw ? 1 : 0); // which cat can stand on it now
+        b.img.setTexture(owner === 0 ? 'cplat_d' : 'cplat_l');
+        if (viewer >= 0 && viewer !== owner) b.img.setTexture(owner === 0 ? 'cghost_d' : 'cghost_l');
+      });
+      if (info.boss && s.bo) {
+        const [bx, by, dir, hp, stun, hit] = s.bo;
+        info.boss.setVisible(true).setPosition(Math.round(bx + 46), Math.round(by + 44 + (stun ? 0 : Math.round(Math.sin(t0 * 14)) ))).setFlipX(dir > 0)
+          .setTint(hit && Math.floor(t0 * 20) % 2 ? 0xffffff : (stun ? 0x8aa0ff : 0xffffff)).setAlpha(hp <= 0 ? 0.5 : 1).setAngle(hp <= 0 ? 8 : 0);
+        info.bossHp.forEach((h, k) => h.setPosition(Math.round(bx + 46 - (info.bossHp.length - 1) * 9 + k * 18), Math.round(by - 12)).setTexture(k < hp ? 'heart' : 'heartEmpty'));
+      }
+      if (info.tdoor) { info.ttext.setPosition(info.tdoor.x + 16, info.tdoor.y - 4).setText(s.tt ? '⏱' + s.tt : ''); }
       if (info.glow) { info.glow.setVisible(s.g === 1 || s.ph !== 'play'); info.glow.setAlpha(Math.floor(this.time0 * 6) % 2 ? 1 : 0.4); }
     }
     drawVs(s) {
@@ -579,6 +717,7 @@
         h.title.setText(`第${s.lv + 1}/${LEVELS.length}关 · ${L.name}`);
         h.hint.setText(L.hint);
         h.fish.setText(`${s.f.filter(Boolean).length}/${s.f.length}`);
+        if (s.ph === 'intro') { big = `第${s.lv + 1}关 · ${L.name}`; sub = '提示'; sub2 = L.hint; }
         if (s.ph === 'clear') { big = s.lv + 1 >= LEVELS.length ? '到家啦！' : '过关啦！'; sub = `${BOTH} 都到啦 ♥`; }
         if (App.paused) sub2 = `暂停中：等待 ${NAMES[1 - App.me]} 重新连接`;
       }
@@ -604,9 +743,28 @@
       }
       if (App.role === 'guest' && App.net && !App.net.connected && App.guestPkt) sub2 = '连接断开了，正在重新连接…';
       h.big.setText(big); h.sub.setText(sub); h.sub2.setText(sub2).setVisible(!!sub2);
+      h.topbar.setVisible(coop || vs);
+      h.card.clear();
+      if (big) {
+        const bw = Math.max(h.big.width, h.sub.width, sub2 ? h.sub2.width : 0) + 64, bh = sub2 ? 190 : 150, x0 = Math.round(W / 2 - bw / 2), y0 = Math.round(H / 2 - 100);
+        h.card.fillStyle(0x0d0f17, 0.5).fillRect(x0 + 6, y0 + 6, bw, bh);
+        h.card.fillStyle(0x0d0f17, 1).fillRect(x0 - 2, y0 + 2, bw + 4, bh - 4).fillRect(x0 + 2, y0 - 2, bw - 4, bh + 4);
+        h.card.fillStyle(0x3a4763, 1).fillRect(x0, y0 + 2, bw, bh - 4).fillRect(x0 + 2, y0, bw - 4, bh);
+        h.card.fillStyle(0x222b3d, 1).fillRect(x0 + 4, y0 + 4, bw - 8, bh - 8);
+        h.card.fillStyle(0xf3c55e, 1).fillRect(x0 + 12, y0 + 10, 8, 2).fillRect(x0 + bw - 20, y0 + 10, 8, 2);
+      }
     }
     ambient(v, dt) {
-      const s = v.s;
+      const s = v.s, th = this.theme, t = this.time0;
+      const tex = th === 'garden' ? 'firefly' : th === 'roof' ? 'twinkle' : 'dust0';
+      this.amb.forEach((a, i) => {
+        const hx = Art.hash(i, 7), hy = Art.hash(i, 8), sp = 0.15 + Art.hash(i, 9) * 0.25;
+        let x, y, al;
+        if (th === 'roof') { x = hx * W; y = 20 + hy * 200; al = Math.max(0, Math.sin(t * (1 + sp * 4) + i * 2)); }
+        else if (th === 'garden') { x = (hx * W + Math.sin(t * sp + i) * 60 + W) % W; y = 180 + hy * 300 + Math.sin(t * sp * 3 + i) * 20; al = 0.4 + 0.6 * Math.max(0, Math.sin(t * 2 + i)); }
+        else { x = (hx * W + t * 8 * sp * 10) % W; y = 60 + hy * 380 + Math.sin(t * sp * 2 + i) * 14; al = 0.25 + 0.2 * Math.sin(t + i); }
+        a.setTexture(tex).setVisible(v.m !== 'pick').setPosition(Math.round(x / 2) * 2, Math.round(y / 2) * 2).setAlpha(al);
+      });
       // hearts when the two cats cuddle (close & still)
       this.heartT -= dt;
       const a = s.c[0], b = s.c[1];
@@ -624,6 +782,12 @@
         }
       }
     }
+    dust(x, y, n = 3) {
+      for (let k = 0; k < n; k++) {
+        const img = this.add.image(x + (k - (n - 1) / 2) * 8, y, 'dust' + (k % 3)).setScale(2).setDepth(7).setAlpha(0.8);
+        this.tweens.add({ targets: img, x: img.x + (k - (n - 1) / 2) * 10, y: y - 6, alpha: 0, duration: 380, onComplete: () => img.destroy() });
+      }
+    }
     spawnHeart(x, y, n = 1) {
       for (let k = 0; k < n; k++) {
         const img = this.add.image(x + (Math.random() - 0.5) * 20 * (n > 1 ? 2 : 1), y, 'heart').setScale(2).setDepth(8);
@@ -639,27 +803,28 @@
     }
     bubble(i, text = '喵~') {
       const c = this.cats[i]; if (!c.visible) return;
-      const t = this.add.text(c.x, c.y - 44, text, this.ts(12, '#3a2e4f', '#ffffff')).setOrigin(0.5, 1).setDepth(9).setPadding(6, 3, 6, 3);
+      const t = this.add.text(c.x, c.y - 44, text, this.ts(12, '#222b3d', '#e8e4f0')).setOrigin(0.5, 1).setDepth(9).setPadding(6, 3, 6, 3);
       this.tweens.add({ targets: t, y: t.y - 16, alpha: 0, delay: 600, duration: 500, onComplete: () => t.destroy() });
     }
     catPos(i) { const c = this.cats[i]; return { x: c.x, y: c.y - 16 }; }
     handleEvents(evs, mode) {
+      if (mode === 'hub') Hub.onEvents(evs);
       for (const e of evs) {
         const [k, i] = e;
         const p = (typeof i === 'number' && i >= 0 && i < 2) ? this.catPos(i) : { x: W / 2, y: H / 2 };
         switch (k) {
           case 'jump': Sfx.jump(); break;
-          case 'land': Sfx.land(); break;
+          case 'land': Sfx.land(); this.dust(p.x, p.y + 16); break;
           case 'stack': Sfx.stack(); this.spawnHeart(p.x, p.y - 10, 2); break;
           case 'fish':
             if (mode === 'vs' && e[2] === 3) Sfx.gold(); else Sfx.fish();
             this.sparkle(p.x, p.y, 4); break;
           case 'plate': Sfx.plate(); break;
           case 'door': Sfx.door(); break;
-          case 'clear': Sfx.clear(); this.spawnHeart(p.x, p.y, 6); break;
+          case 'clear': Sfx.clear(); this.spawnHeart(p.x, p.y, 6); Diary.tally('coop'); break;
           case 'level': case 'restart': break;
           case 'ending': Sfx.ending(); break;
-          case 'meow': Sfx.meow(i ? 1.25 : 1); this.bubble(i, i ? '喵~♥' : '喵！'); break;
+          case 'meow': if (this.catAnim[i]) this.catAnim[i].meowT = 0.5; Sfx.meow(i ? 1.25 : 1); this.bubble(i, i ? '喵~♥' : '喵！'); break;
           case 'swipe': Sfx.swipe(); break;
           case 'bigswipe': {
             Sfx.swipe(); Sfx.power();
@@ -681,6 +846,20 @@
           case 'roundover': if (e[1] >= 0) { Sfx.clear(); } else Sfx.lose(); break;
           case 'matchover': Sfx.ending(); break;
           case 'mode': break;
+          case 'hug': Sfx.purr(); Sfx.chime(); Diary.stamp('hug'); banner('抱抱 ♥', 1500); break;
+          case 'hugask': Sfx.pop(); if (App.role === 'local' || i !== App.me) banner(`${NAMES[i]} 想要抱抱！按 ♥ 抱回去`, 2200); else banner(`等 ${NAMES[1 - i]} 也按 ♥…`, 2000); break;
+          case 'hugfar': if (App.role === 'local' || i === App.me) banner('再靠近一点才能抱抱哦', 1400); break;
+          case 'hugmiss': break;
+          case 'nuzzle': Sfx.purr(); if (mode !== 'hub') this.spawnHeart(p.x, p.y - 10, 1); Diary.count('nuzzle'); break;
+          case 'lever': Sfx.lever(); this.sparkle(p.x, p.y, 3); break;
+          case 'swap': Sfx.swap(); this.cameras.main.flash(160, 40, 50, 80); break;
+          case 'boing': Sfx.boing(); this.dust(p.x, p.y + 16); break;
+          case 'launch': Sfx.launch(); this.dust(p.x, p.y + 16, 4); break;
+          case 'splash': Sfx.splash(); break;
+          case 'latch': Sfx.door(); banner('一起踩下去了！门打开啦', 1600); break;
+          case 'conv': Sfx.tick(); break;
+          case 'bosshit': Sfx.hit(); this.cameras.main.shake(160, 0.006); banner(e[1] > 0 ? `扫地机大魔王还剩 ${e[1]} 颗心` : '', 1400); break;
+          case 'bossdown': Sfx.clear(); banner('打败扫地机大魔王啦！笼子打开了', 2000); break;
         }
       }
     }
@@ -703,6 +882,7 @@
     $('btn-mode-coop').onclick = () => App.pickMode('coop');
     $('btn-mode-vs').onclick = () => App.pickMode('vs');
     $('btn-mode-back').onclick = () => App.toMenu();
+    document.querySelectorAll('.hubm').forEach(b => { b.onclick = () => App.pickHub(b.dataset.hub); });
     $('btn-again').onclick = () => App.again();
     $('btn-rematch').onclick = () => App.again();
     $('btn-end-mode').onclick = () => App.backToModes();
@@ -722,6 +902,8 @@
       const playing = App.isTouch && App.role !== 'menu' && v && v.s && v.m !== 'pick' && !curScreen;
       tc.classList.toggle('hidden', !playing);
       tc.classList.toggle('coop', !!(v && v.m === 'coop')); tc.classList.toggle('vs', !!(v && v.m === 'vs'));
+      const hp = !!(v && v.m === 'hub' && Hub.wantsPad(v)); tc.classList.toggle('hubpad', hp);
+      if (v && v.m === 'hub' && !hp) tc.classList.add('hidden');
     }, 250);
   }
 

@@ -1,0 +1,62 @@
+// Seoul — compact config. Right-hand traffic. Seoul Subway Line 2, the 43-station circle
+// (listed clockwise from City Hall; the Seongsu and Sinjeong branches are left out). Shops and hotels are fictional.
+Cities.quick({
+  id: 'seoul', name: '首尔', local: '서울', drive: 'R',
+  blurb: '南山塔的夜景、弘大的街头演出、江南的霓虹；2 号线绕城一圈。',
+  palette: ['#c8c4bc', '#8a8a96', '#d8d0c4', '#6a6a7a', '#b8a890'], styles: ['glass', 'condo', 'brick'],
+  shops: ['cafe', 'conv', 'bakery', 'books', 'game', 'flowers', 'gift'],
+  shopNames: { cafe: ['고양이 카페 냥', '달빛 커피'], conv: ['냥냥 편의점'], bakery: ['빵집 말랑'], books: ['책방 냥'], game: ['오락실 픽셀'], flowers: ['꽃집 봄'], gift: ['기념품 하나'] },
+  signs: { welcome: '서울에 오신 것을 환영합니다', exit: '출구', reception: '프런트', towards: '방면', boarding: '타는 곳', shop: { cafe: '카페', conv: '편의점', bakery: '빵집', books: '서점', game: '오락실', flowers: '꽃집', gift: '기념품', bar: '치킨' } },
+  taxi: '#e8a020', streetSign: { bg: '#1e4a8a', fg: '#fff' },
+  ann: { next: '이번 역은 · This stop is', arr: 'Arriving at', end: 'This is the last stop' },
+  items: { cafe: [['草莓拿铁', 2], ['柚子茶', 2]], conv: [['香蕉牛奶', 1], ['三角饭团', 1], ['辣炒年糕杯', 1]], bakery: [['鲷鱼烧', 1], ['奶油面包', 1]], gift: [['猫咪面膜', 2], ['小熊钥匙扣', 2]] },
+  views: {
+    namsan: { id: 'se-namsan', horizon: .74, mountains: 'hills', skyline: { far: { hMax: 60, kinds: ['glass', 'condo'] }, mid: { hMax: 80, hMin: 30, kinds: ['glass', 'condo', 'old'] }, near: { kinds: ['glass', 'old'] } },
+      landmarks: [{ k: 'namsan', x: .6, depth: .45 }], movers: [{ k: 'cars', side: 'R', n: 5 }, { k: 'blink' }] },
+    hongdae: { id: 'se-hongdae', horizon: .78, skyline: { far: { hMax: 50, kinds: ['condo', 'glass'] }, mid: { hMax: 50, hMin: 20, kinds: ['brick', 'condo'] }, near: { kinds: ['brick', 'condo'] } },
+      landmarks: [{ k: 'namsan', x: .85, depth: .2 }], movers: [{ k: 'neon' }, { k: 'cars', side: 'R', n: 4 }] },
+    gangnam: { id: 'se-gangnam', horizon: .78, skyline: { far: { hMax: 90 }, mid: { hMax: 120, hMin: 50, kinds: ['glass', 'glass', 'condo'] }, near: { kinds: ['glass'] } },
+      movers: [{ k: 'neon' }, { k: 'cars', side: 'R', n: 6 }, { k: 'blink' }] },
+  },
+  hotels: [
+    { id: 'tower', name: '明洞南山酒店', area: 'cityhall', x: 1100, room: 'modern', roomName: '南山塔景观房', view: 'namsan', floor: 20, tip: '推荐',
+      desc: '明洞边上的高层酒店，晚上窗外是亮灯的南山塔。' },
+    { id: 'guest', name: '弘大小客栈', area: 'hongdae', x: 900, room: 'cozy', roomName: '阁楼双人房', view: 'hongdae', floor: 4,
+      desc: '弘大巷子里的小客栈，楼下就是咖啡店和街头演出。', lobby: { wall: '#e8d8c8', uniform: '#3a2a4a' }, hall: { wall: '#d8c8b8', carpet: '#5a4a6a', door: '#f4f4f4' } },
+  ],
+  areas: [
+    { id: 'cityhall', name: '市厅 · 明洞', view: 'namsan', start: 500, bench: 1500, benchName: '首尔广场边的长椅',
+      street: { len: 7, cross: [2, 5], names: ['명동길', '을지로'], label: '세종대로', styles: ['glass', 'condo', 'old'], shops: ['conv', 'cafe', 'gift', 'bakery', 'flowers'] },
+      sign: [1300, '明洞是购物街，抬头就能看到南山上的首尔塔。'] },
+    { id: 'hongdae', name: '弘大', view: 'hongdae', start: 400, bench: 1200, benchName: '街头演出旁的台阶',
+      street: { len: 7, cross: [3], names: ['어울마당로'], label: '홍익로', styles: ['brick', 'condo'], shops: ['cafe', 'game', 'books', 'conv', 'bakery'], trees: true },
+      lib: [1500, '书店咖啡角', 'cafe'] },
+    { id: 'gangnam', name: '江南', view: 'gangnam', start: 400, bench: 1100, benchName: '大街边的长椅',
+      street: { len: 6, cross: [2], names: ['테헤란로'], label: '강남대로', styles: ['glass', 'glass', 'condo'], shops: ['cafe', 'conv', 'game', 'bakery'] },
+      sign: [600, '江南站附近的大街上有一排会发光的媒体墙。'] },
+  ],
+  lines: [
+    { id: 'l2', name: '首尔地铁 2 号线', short: '2', color: '#00a84d', body: '#e4e6ea', car: 'subway',
+      st: ['City Hall|市厅@cityhall:300', 'Euljiro 1-ga|乙支路入口', 'Euljiro 3-ga|乙支路 3 街', 'Euljiro 4-ga|乙支路 4 街', 'Dongdaemun History & Culture Park|东大门历史文化公园', 'Sindang|新堂', 'Sangwangsimni|上往十里', 'Wangsimni|往十里', '^Hanyang Univ.|汉阳大学', '^Ttukseom|纛岛', '^Seongsu|圣水', '^Konkuk Univ.|建大入口', 'Guui|九宜', 'Gangbyeon|江边', 'Jamsillaenaru|蚕室渡口', 'Jamsil|蚕室', 'Jamsilsaenae|蚕室新川', 'Sports Complex|综合运动场', 'Samseong|三成', 'Seolleung|宣陵', 'Yeoksam|驿三', 'Gangnam|江南@gangnam:300', 'Gyodae|教大', 'Seocho|瑞草', 'Bangbae|方背', 'Sadang|舍堂', 'Nakseongdae|落星垈', "Seoul Nat'l Univ.|首尔大入口", 'Bongcheon|奉天', 'Sillim|新林', 'Sindaebang|新大方', 'Guro Digital Complex|九老数码园区', 'Daerim|大林', 'Sindorim|新道林', 'Mullae|文来', 'Yeongdeungpo-gu Office|永登浦区厅', '^Dangsan|堂山', 'Hapjeong|合井', 'Hongik Univ.|弘大入口@hongdae:300', 'Sinchon|新村', 'Ewha Womans Univ.|梨大', 'Ahyeon|阿岘', 'Chungjeongno|忠正路'] },
+  ],
+  routes: [
+    ['市厅 → 弘大', '2 号线往西（逆时针）4 站：忠正路、阿岘、梨大、新村。', [['l2', 'City Hall', 'Hongik Univ.']]],
+    ['市厅 → 江南', '2 号线顺时针绕到江南，路上过汉江。', [['l2', 'City Hall', 'Gangnam']]],
+    ['汉江上看风景', '纛岛一带是地上段，能看到汉江。', [['l2', 'Wangsimni', 'Jamsil']]],
+  ],
+  acts: [
+    { id: 'namsan', name: '南山塔夜景', area: 'cityhall', x: 800, icon: 'star', kind: 'photo', tod: 'night', intro: '让亮灯的南山塔进框，两只猫靠在一起按 ↑。', real: 'N 首尔塔立在南山上，栏杆上挂满了情侣的爱心锁。', cfg: { target: .6, lmName: '南山塔', n: 4 } },
+    { id: 'busking', name: '弘大街头演出', area: 'hongdae', x: 700, icon: 'star', kind: 'collect', tod: 'night', intro: '街头乐队开唱了！一起接住飘下来的音符星星。', real: '弘大周末晚上到处是街头演出（busking）。', cfg: { items: ['star', 'star', 'coin'], max: 6 } },
+    { id: 'chimaek', name: '炸鸡夜宵', area: 'gangnam', x: 800, icon: 'fish', kind: 'order', tod: 'night', intro: '深夜炸鸡店！照着清单点：原味、甜辣、萝卜块……', real: '韩式炸鸡配汽水或啤酒（치맥）是很受欢迎的夜宵。',
+      cfg: { listTitle: '夜宵清单', n: 5, pool: [['原味炸鸡', 'star'], ['甜辣炸鸡', 'apple'], ['腌萝卜', 'leaf'], ['汽水', 'cup'], ['芝士球', 'coin'], ['辣炒年糕', 'pie']] } },
+    { id: 'korean', name: '韩语小测', area: 'hongdae', x: 1350, icon: 'book', kind: 'quiz', tod: 'day', intro: '学几句韩语！两只猫一起答。', real: '韩文（한글）由世宗大王在 1443 年创制。', cfg: { qtitle: '韩语题', n: 4, qtime: 20, qs: [
+      ['“你好”怎么说？', ['안녕하세요', '감사합니다', '사랑해', '맛있어요'], 0, '안녕하세요（annyeonghaseyo）= 你好。'],
+      ['“谢谢”怎么说？', ['네', '감사합니다', '아니요', '여기요'], 1, '감사합니다（gamsahamnida）= 谢谢。'],
+      ['出口是？', ['입구', '출구', '화장실', '역'], 1, '출구 = 出口，입구 = 入口。'],
+      ['“好吃”怎么说？', ['맛있어요', '추워요', '졸려요', '비싸요'], 0, '맛있어요（masisseoyo）= 好吃。'],
+    ] } },
+  ],
+  map: { land: '#e0dccc', water: [[0, 64, 100, 7]], parks: [[46, 40, 10, 10]],
+    lines: { l2: [[40, 34], [60, 32], [74, 46], [78, 74], [60, 84], [38, 80], [20, 66], [20, 44], [40, 34]] },
+    labels: [[86, 66, '汉江', '#3a6a9a'], [50, 50, '南山', '#3a5a3a']], areas: { cityhall: [40, 34], hongdae: [20, 44], gangnam: [60, 84] } },
+});

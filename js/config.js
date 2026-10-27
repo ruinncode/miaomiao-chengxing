@@ -6,7 +6,7 @@
 //     (name tags above the cats, lobby, level clear, scoreboard, winner screen…)
 window.NAMES = {
   p1: 'jsq',   // black cat (room creator / host, local: WASD)
-  p2: 'yyf',   // white cat (the one who joins, local: arrow keys)
+  p2: 'yyf',   // brown tabby with a yellow bell collar (the one who joins, local: arrow keys)
 };
 
 window.GAME_CONFIG = {
@@ -27,6 +27,10 @@ window.GAME_CONFIG = {
     runSpeed: 180,
     jumpVelocity: 500,   // ~89px jump: clears 2 tiles, NOT 3 tiles alone
     maxFall: 720,
+    springVelocity: 760,  // spring '^'
+    launchVelocity: 1050, // launch pad 'P'
+    conveyorSpeed: 100,
+    timedDoor: 5,         // seconds a 't' door stays open
   },
 
   // Online play (PeerJS public cloud signaling + STUN/TURN)

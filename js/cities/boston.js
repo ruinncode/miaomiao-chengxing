@@ -1,0 +1,61 @@
+// Boston — compact config. Right-hand traffic. MBTA Red Line, Alewife → Ashmont branch (17 stations).
+// Cafés, inns and shops are fictional.
+Cities.quick({
+  id: 'boston', name: '波士顿', local: 'Boston', drive: 'R',
+  blurb: '哈佛的红砖、灯塔山的煤气灯、查尔斯河的帆船和波士顿公园的松鼠；红线一路串起来。',
+  palette: ['#8a3a2a', '#9a4a3a', '#7a3a2a', '#b8a080', '#5a4a3a'], styles: ['brick', 'brick', 'old'],
+  shops: ['cafe', 'books', 'bakery', 'grocery', 'flowers', 'gift'],
+  shopNames: { cafe: ['Red Brick Café', 'Chowder & Cat'], books: ['Harbor Cat Books'], bakery: ['Cannoli Corner'], grocery: ['Beacon Market'], flowers: ['Common Florist'], gift: ['Tea Party Gifts'] },
+  signs: { welcome: 'Welcome to Boston', exit: 'Exit', reception: 'Front Desk', towards: 'To', boarding: 'Platform', shop: { cafe: 'Café', books: 'Books', grocery: 'Market', bakery: 'Bakery', flowers: 'Flowers', gift: 'Gifts' } },
+  taxi: '#e8e8ee', streetSign: { bg: '#1e4a2a', fg: '#fff' },
+  ann: { next: 'Next stop,', arr: 'Arriving at', end: 'This is the last stop' },
+  items: { cafe: [['蛤蜊浓汤', 3], ['热苹果酒', 2]], bakery: [['波士顿奶油派', 2], ['奶油甜卷', 2]], gift: [['红袜队小帽子', 2], ['鸭子船明信片', 1]] },
+  views: {
+    harvard: { id: 'bo-harvard', horizon: .76, skyline: { far: { hMax: 26, kinds: ['old', 'brick'] }, mid: { hMax: 36, hMin: 16, kinds: ['brick', 'old'] }, near: { kinds: ['brick'] } },
+      landmarks: [{ k: 'clocktower', x: .6, depth: .4 }], movers: [{ k: 'birds', y: .3 }, { k: 'cars', side: 'R', n: 3 }] },
+    river: { id: 'bo-river', horizon: .64, water: true, skyline: { far: { hMax: 80, kinds: ['glass', 'condo'] }, mid: { hMax: 34, hMin: 14, kinds: ['brick', 'old'] }, near: false }, near: false,
+      landmarks: [{ k: 'dome', x: .42, depth: .4 }], movers: [{ k: 'sail', y: .84 }, { k: 'geese', y: .3 }] },
+    common: { id: 'bo-common', horizon: .76, skyline: { far: { hMax: 90, kinds: ['glass', 'condo'] }, mid: { hMax: 40, hMin: 18, kinds: ['brick', 'old'] }, near: { kinds: ['brick', 'old'] } },
+      landmarks: [{ k: 'dome', x: .66, depth: .45 }], movers: [{ k: 'cars', side: 'R', n: 4 }, { k: 'birds', y: .3 }] },
+  },
+  hotels: [
+    { id: 'inn', name: '灯塔山红砖小旅馆', area: 'beacon', x: 1100, room: 'cozy', roomName: '壁炉小房间', view: 'river', floor: 3, tip: '推荐',
+      desc: '十九世纪的红砖排屋，窗外是查尔斯河上的白帆。', lobby: { wall: '#8a3a2a', uniform: '#2a3a2a' }, hall: { wall: '#7a4a3a', carpet: '#2a4a3a', door: '#1a1a1a' } },
+    { id: 'common', name: '公园边酒店', area: 'common', x: 900, room: 'modern', roomName: '公园景观房', view: 'common', floor: 14, desc: '正对波士顿公园，能看到州议会大厦的金色圆顶。' },
+  ],
+  areas: [
+    { id: 'harvard', name: '哈佛广场', view: 'harvard', start: 500, bench: 1200, benchName: '哈佛园的长椅',
+      street: { len: 7, cross: [2], names: ['Brattle St'], label: 'Massachusetts Ave', styles: ['brick', 'old'], shops: ['books', 'cafe', 'bakery', 'gift'], trees: true },
+      lib: [1500, '旧书店的阅读角', 'books'] },
+    { id: 'beacon', name: '灯塔山 · 查尔斯河', view: 'river', start: 400, bench: 800, benchName: '河滨步道的长椅',
+      street: { len: 7, cars: false, cross: [3], names: ['Mt Vernon St'], label: 'Charles St', styles: ['brick', 'brick'], shops: ['flowers', 'cafe', 'grocery', 'books'], trees: true },
+      sign: [1400, '灯塔山的砖头人行道和煤气路灯，从十九世纪一直保留到现在。'] },
+    { id: 'common', name: '波士顿公园 · 自由之路', view: 'common', start: 400, bench: 1300, benchName: '公园里的长椅',
+      street: { len: 6, cross: [2], names: ['Tremont St'], label: 'Park St', styles: ['old', 'brick', 'glass'], shops: ['cafe', 'bakery', 'gift', 'books'], trees: true },
+      sign: [600, '自由之路（Freedom Trail）是地上一条红砖线，串起 16 个历史地点。'] },
+  ],
+  lines: [
+    { id: 'red', name: 'MBTA 红线', short: 'Red', color: '#da291c', body: '#d8dce4', car: 'subway',
+      st: ['Alewife|阿利怀夫', 'Davis|戴维斯', 'Porter|波特', 'Harvard|哈佛@harvard:300', 'Central|中央广场', 'Kendall/MIT|肯德尔/MIT', '^Charles/MGH|查尔斯/麻省总医院@beacon:300', 'Park Street|公园街@common:300', 'Downtown Crossing|市中心交汇', 'South Station|南站', 'Broadway|百老汇', 'Andrew|安德鲁', '^JFK/UMass|JFK/麻省大学', '^Savin Hill|萨文山', '^Fields Corner|菲尔兹角', '^Shawmut|肖穆特', 'Ashmont|阿什蒙特'] },
+  ],
+  routes: [
+    ['哈佛 → 灯塔山', '红线往南，出隧道过朗费罗桥时能看到查尔斯河。', [['red', 'Harvard', 'Charles/MGH']]],
+    ['灯塔山 → 波士顿公园', '红线一站就到公园街。', [['red', 'Charles/MGH', 'Park Street']]],
+    ['去南站', '红线从哈佛坐到南站，那里可以换乘火车。', [['red', 'Harvard', 'South Station']]],
+  ],
+  acts: [
+    { id: 'quiz', name: '哈佛广场小测', area: 'harvard', x: 800, icon: 'book', kind: 'quiz', tod: 'day', intro: '在哈佛园里答几道波士顿小题。', real: '哈佛大学创立于 1636 年，是美国最古老的大学。', cfg: { qtitle: '波士顿题', n: 4, qtime: 20, qs: [
+      ['哈佛大学在哪座城市？', ['波士顿', '剑桥（麻省）', '纽约', '费城'], 1, '哈佛在查尔斯河北岸的剑桥市。'],
+      ['波士顿地铁叫？', ['MTR', 'the T', 'Tube', 'Metro'], 1, '大家叫它 the T（MBTA）。'],
+      ['自由之路地上是？', ['一条红砖线', '一排猫爪印', '黄色油漆', '没有标记'], 0, '跟着红砖线走就行。'],
+      ['波士顿有名的汤是？', ['罗宋汤', '蛤蜊浓汤', '味噌汤', '番茄汤'], 1, '新英格兰蛤蜊浓汤（clam chowder）。'],
+    ] } },
+    { id: 'sail', name: '查尔斯河划船', area: 'beacon', x: 1520, icon: 'ticket', kind: 'paddle', tod: 'golden', time: 50, intro: '一起在查尔斯河上划小船，节奏一致就越划越快。', real: '查尔斯河是波士顿和剑桥的分界线，岸边有很多划船俱乐部。', cfg: { goal: 650, vmax: 80, boatColor: '#da291c' } },
+    { id: 'leaves', name: '接秋叶', area: 'common', x: 1000, icon: 'leaf', kind: 'collect', tod: 'golden', intro: '新英格兰的秋天，枫叶飘下来了！一起接住叶子。', real: '新英格兰的秋叶一般在 10 月最好看。', cfg: { fall: true, items: ['leaf', 'leaf', 'flower'], max: 6 } },
+    { id: 'chowder', name: '蛤蜊浓汤', area: 'common', x: 200, icon: 'cup', kind: 'order', tod: 'day', intro: '海鲜小馆的面包碗！照着清单点：浓汤、龙虾卷、奶油派……', real: '蛤蜊浓汤和龙虾卷是新英格兰的经典菜。',
+      cfg: { listTitle: '菜单', n: 5, pool: [['蛤蜊浓汤', 'cup'], ['龙虾卷', 'fish'], ['波士顿奶油派', 'pie'], ['生蚝', 'fish'], ['苹果酒', 'cup'], ['甜甜圈', 'coin']] } },
+  ],
+  map: { land: '#e0dccc', water: [[0, 50, 70, 6], [70, 40, 30, 60]], parks: [[50, 60, 10, 8]],
+    lines: { red: [[10, 10], [30, 24], [40, 40], [48, 58], [60, 70], [62, 96]] },
+    labels: [[20, 54, '查尔斯河', '#3a6a9a']], areas: { harvard: [30, 24], beacon: [46, 58], common: [58, 70] } },
+});
